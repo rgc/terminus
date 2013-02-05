@@ -7,6 +7,6 @@ Matt Biernat - biernat2@buffalo.edu
 
 Rob Colantuoni - rgc@buffalo.edu
 
-Scott Haseley - shaseley2@buffalo.edu 
+Scott Haseley - shaseley@buffalo.edu 
 
 

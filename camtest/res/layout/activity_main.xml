@@ -1,0 +1,81 @@
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:paddingBottom="@dimen/activity_vertical_margin"
+    android:paddingLeft="@dimen/activity_horizontal_margin"
+    android:paddingRight="@dimen/activity_horizontal_margin"
+    android:paddingTop="@dimen/activity_vertical_margin" >
+  
+  <FrameLayout
+    android:id="@+id/camera_preview"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent"
+    android:layout_weight="1"
+    >
+
+  </FrameLayout>
+
+  <Button
+    android:id="@+id/button_capture"
+    android:text="Capture"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:layout_gravity="center"
+    />
+	
+	<TextView
+	    android:id="@+id/xcoor"
+	    android:layout_width="wrap_content"
+	    android:layout_height="wrap_content"
+	    android:layout_alignParentRight="true"
+	    android:layout_alignParentTop="true"
+	    android:text="@string/xcoor"
+	    android:textColor="#f00" />
+
+	<TextView
+	    android:id="@+id/ycoor"
+	    android:layout_width="wrap_content"
+	    android:layout_height="wrap_content"
+	    android:layout_alignParentRight="true"
+	    android:layout_below="@+id/xcoor"
+	    android:text="@string/ycoor"
+	    android:textColor="#f00" />
+
+	<TextView
+	    android:id="@+id/zcoor"
+	    android:layout_width="wrap_content"
+	    android:layout_height="wrap_content"
+	    android:layout_alignParentRight="true"
+	    android:layout_below="@+id/ycoor"
+	    android:text="@string/zcoor"
+	    android:textColor="#f00" />
+	
+	<TextView
+	    android:id="@+id/soundLev"
+	    android:layout_width="wrap_content"
+	    android:layout_height="wrap_content"
+	    android:layout_alignParentRight="true"
+	    android:layout_below="@+id/zcoor"
+	    android:text="@string/soundLev"
+	    android:textColor="#f00" />
+	
+	<TextView
+	    android:id="@+id/lightLev"
+	    android:layout_width="wrap_content"
+	    android:layout_height="wrap_content"
+	    android:layout_alignParentRight="true"
+	    android:layout_below="@+id/soundLev"
+	    android:text="@string/lightLev"
+	    android:textColor="#f00" />
+	
+	<TextView
+	    android:id="@+id/magLev"
+	    android:layout_width="wrap_content"
+	    android:layout_height="wrap_content"
+	    android:layout_alignParentRight="true"
+	    android:layout_below="@+id/lightLev"
+	    android:text="@string/magLev"
+	    android:textColor="#f00" />
+	
+</RelativeLayout>

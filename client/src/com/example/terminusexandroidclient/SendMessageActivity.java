@@ -32,7 +32,7 @@ public class SendMessageActivity extends Activity implements INetworkCallbacks
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.main);
 		
-		connectionManager = new ConnectionModule(this);
+		connectionManager = new ConnectionModule(new UIEventBridge(this, this));
 		
 		setActivityControls();
 		
@@ -42,6 +42,7 @@ public class SendMessageActivity extends Activity implements INetworkCallbacks
 		String ip = this.getIntent().getStringExtra("ipAddress");
 		int port = this.getIntent().getIntExtra("portNumber", 0);
 		connectionManager.connect(ip, port);
+		
 	}
 	
 	private void setActivityControls()
@@ -71,7 +72,7 @@ public class SendMessageActivity extends Activity implements INetworkCallbacks
 	//////////////////////   Connection Manager Callbacks   //////////////////////
 	
 	@Override
-	public void connectionFinished(ConnectionResult result)
+	public void connectionFinished(final ConnectionResult result)
 	{
 		hourglass.dismiss();
 		String errText = "";
@@ -120,7 +121,7 @@ public class SendMessageActivity extends Activity implements INetworkCallbacks
 	}
 	
 	@Override
-	public void messageFinished(ConnectionResult result)
+	public void messageFinished(final ConnectionResult result)
 	{
 		switch (result.status)
 		{
@@ -135,13 +136,13 @@ public class SendMessageActivity extends Activity implements INetworkCallbacks
 	@Override
 	public void disconnectFinished(ConnectionResult result)
 	{
-		
+
 	}
 
 	@Override
-	public void messageReceived(TerminusMessage msg)
+	public void messageReceived(final TerminusMessage msg)
 	{
 		sentMessages.add(msg.message);
-		lvMessages.invalidateViews();	
+		lvMessages.invalidateViews();		
 	}
 }

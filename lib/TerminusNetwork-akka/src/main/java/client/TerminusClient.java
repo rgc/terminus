@@ -6,6 +6,7 @@ import akka.actor.ActorSystem;
 import akka.actor.Actor;
 import akka.actor.Props;
 import akka.actor.ActorRef;
+import akka.actor.DeadLetter;
 import akka.remote.RemoteLifeCycleEvent;
 
 public class TerminusClient {
@@ -23,8 +24,12 @@ public class TerminusClient {
 	system 		= ActorSystem.create("TerminusClient", ConfigFactory.load().getConfig("TerminusClient")); 
   	clientActor 	= system.actorOf(new Props(TerminusClientListener.class), "TerminusClient");
 
-	// clientActor will recieve all local and remote events
+	// clientActor will recieve all remote lifecycle events
 	system.eventStream().subscribe(clientActor, RemoteLifeCycleEvent.class);
+
+	// clientActor will recieve all deadletter events - deadletter is where
+	// messages that weren't able to be sent are placed
+	system.eventStream().subscribe(clientActor, DeadLetter.class);
 
   }
 

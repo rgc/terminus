@@ -4,4 +4,4 @@ mvn compile
 mvn exec:java -Dexec.mainClass="edu.buffalo.cse.terminus.server.TerminusServer"
 
 # for client:
-mvn exec:java -Dexec.mainClass="edu.buffalo.cse.terminus.client.TerminusClient"
+mvn exec:java -Dexec.mainClass="edu.buffalo.cse.terminus.client.TerminusClientTest"

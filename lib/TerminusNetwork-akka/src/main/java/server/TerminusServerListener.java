@@ -19,8 +19,10 @@ public class TerminusServerListener extends UntypedActor {
       System.out.println("Received String: \""+string+"\"");
 
     } else if(message instanceof RegisterMessage) {
-	ActorRef client = getSender();
-	registerClient((RegisterMessage)message, client);
+	registerClient((RegisterMessage)message, getSender());
+
+    } else if(message instanceof EventMovementDetected) {
+	movementDetected((EventMovementDetected)message, getSender());
 
     } else {
 	System.out.println("bad message");
@@ -37,6 +39,10 @@ public class TerminusServerListener extends UntypedActor {
 	OptionsMessage m = new OptionsMessage(id);
 	client.tell(m, getSelf());
 
+  }
+
+  private void movementDetected(EventMovementDetected message, ActorRef client) {
+	System.out.println("Movement Detected");
   }
   
 }

@@ -18,20 +18,25 @@ public class TerminusServerListener extends UntypedActor {
       final String string = (String) message;
       System.out.println("Received String: \""+string+"\"");
 
-      ActorRef clientActor = getSender();
-      clientActor.tell("lala");
-
     } else if(message instanceof RegisterMessage) {
-	registerClient((RegisterMessage)message);
+	ActorRef client = getSender();
+	registerClient((RegisterMessage)message, client);
 
     } else {
 	System.out.println("bad message");
     }
   }
 
-  private void registerClient(RegisterMessage message) {
-	System.out.println("register");
-      	sessions.put(message.getId(), getSender());
+  private void registerClient(RegisterMessage message, ActorRef client) {
+	String id = message.getId();
+      	
+	sessions.put(id, client);
+
+	System.out.println("Registration from ID: " + id);
+	
+	OptionsMessage m = new OptionsMessage(id);
+	client.tell(m, getSelf());
+
   }
   
 }

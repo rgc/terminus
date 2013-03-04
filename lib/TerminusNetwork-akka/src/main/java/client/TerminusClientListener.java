@@ -4,6 +4,7 @@ import akka.actor.UntypedActor;
 import akka.actor.ActorRef;
 import akka.actor.Terminated;
 import akka.actor.Props;
+import akka.remote.RemoteClientConnected;
 
 import edu.buffalo.cse.terminus.common.message.*;
 
@@ -21,24 +22,28 @@ public class TerminusClientListener extends UntypedActor {
 
  		server = getContext().actorFor("akka://TerminusServer@127.0.0.1:3003/user/TerminusServer");
 		this.getContext().watch(server);
-
-  		// registering with other actors
-		//  someService.tell(Register(getSelf());
-		registerClient();
 	}
   
 	@Override
   	public void onReceive(Object message) throws Exception {
-      		System.out.println(message.getClass().getName());
 
 		if(message instanceof String) {
-      			System.out.println("Received String \""+message+"\"");
+			// proxy to server
+      			System.out.println("Proxy string to server");
+			this.sendToServer(message);
 		
+		} else if (message instanceof RemoteClientConnected) {
+			if(!registered) {
+				this.sendRegisterMessage();
+			}	
+
 		} else if (message instanceof OptionsMessage) {
       			System.out.println("Received Options Message");
-			this.registered = true;
-
 			this.setClientOptions((OptionsMessage)message);
+
+		} else if (message instanceof EventMovementDetected) {
+			// proxy to server
+			this.sendToServer(message);
 
 		} else if (message instanceof Terminated) {
 
@@ -49,28 +54,27 @@ public class TerminusClientListener extends UntypedActor {
 			}
 
 		} else {
-			// unhandled!
+			// unhandled
+			//System.out.println("Unhandled: " + message.getClass().getName());
 		}
 
   	}
 
-	public void registerClient () {
+	public void sendToServer ( Object o ) {
+		server.tell(o, getSelf());
+	}
 
-		while(!registered) {
-      			System.out.println("Sending Registration message!");
-      			server.tell("hey", getSelf());
+	public void sendRegisterMessage () {
 
-			try {
-    				Thread.sleep(1000);
-			} catch(InterruptedException ex) {
-    				Thread.currentThread().interrupt();
-			}
+      		System.out.println("Sending Registration message!");
+		RegisterMessage m = new RegisterMessage("lalala");
 
-		}
-
+      		this.sendToServer(m);
+	
 	}
 
 	public void setClientOptions (OptionsMessage message) {
+		this.registered = true;
 
 	}
   

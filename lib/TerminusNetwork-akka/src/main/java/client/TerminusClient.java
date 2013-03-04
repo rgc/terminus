@@ -10,21 +10,30 @@ import akka.remote.RemoteLifeCycleEvent;
 
 public class TerminusClient {
   
-  final ActorSystem system = ActorSystem.create("TerminusClient", ConfigFactory.load().getConfig("TerminusClient")); 
-  
-  public static void main(String[] args) {
-    new TerminusClient().startup();
+  private ActorSystem system;
+  private ActorRef clientActor;
+
+  public TerminusClient () {
+	this.startup();
+
   }
   
   public void startup() {
-    	final ActorRef client = system.actorOf(new Props(TerminusClientListener.class), "TerminusClient");
-	system.eventStream().subscribe(client, RemoteLifeCycleEvent.class);
-    	System.out.println("Started Terminus Client!");
-    	client.tell("hey");
+  	
+	system 		= ActorSystem.create("TerminusClient", ConfigFactory.load().getConfig("TerminusClient")); 
+  	clientActor 	= system.actorOf(new Props(TerminusClientListener.class), "TerminusClient");
+
+	// clientActor will recieve all local and remote events
+	system.eventStream().subscribe(clientActor, RemoteLifeCycleEvent.class);
+
+  }
+
+  public void send(Object o) {
+	clientActor.tell(o);
   }
   
   public void shutdown() {
-    system.shutdown();
+    	system.shutdown();
   }
   
 }

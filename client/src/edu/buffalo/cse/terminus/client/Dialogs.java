@@ -1,4 +1,4 @@
-package com.example.terminusexandroidclient;
+package edu.buffalo.cse.terminus.client;
 
 import android.app.AlertDialog;
 import android.app.ProgressDialog;

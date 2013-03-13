@@ -1,4 +1,6 @@
-package com.example.terminusexandroidclient;
+package edu.buffalo.cse.terminus.client;
+
+import edu.buffalo.cse.terminus.client.R;
 
 import android.app.Activity;
 import android.content.Intent;
@@ -9,7 +11,7 @@ import android.view.View;
 import android.widget.EditText;
 
 /*
- * Simple activity to get the IP Address/Host Name from the user and
+ * Activity to get the IP Address/Host Name from the user and
  * pass the information to the message sending activity.
  * 
  * The parameters are stored in the preference file to avoid having

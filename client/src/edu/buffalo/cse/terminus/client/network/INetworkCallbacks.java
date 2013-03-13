@@ -1,4 +1,6 @@
-package com.example.terminusexandroidclient.connection;
+package edu.buffalo.cse.terminus.client.network;
+
+import edu.buffalo.cse.terminus.messages.TerminusMessage;
 
 public interface INetworkCallbacks
 {

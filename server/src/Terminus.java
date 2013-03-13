@@ -1,37 +1,29 @@
 import java.io.*;
 import java.net.*;
 
-import server.ITerminusCallbacks;
-import server.TerminusMessage;
-import server.TerminusServer;
+import eventserver.EventServer;
+import eventserver.IEventCallbacks;
+import edu.buffalo.cse.terminus.messages.*;
 
-public class Terminus implements ITerminusCallbacks
+import shared.ATerminusConnection;
+import shared.ServerCloseException;
+
+public class Terminus implements IEventCallbacks
 {	
 	public static final int INTERNET_TIMEOUT = 10000;
-	public static final int DEFAULT_PORT = 34410;
 	
-	private TerminusServer tserver;
+	private EventServer tserver;
 	
 	public Terminus(String[] args)
 	{
-		/* 
-		 * This kills the program if the port isn't valid
-		 * 
-		 * -1 => No port entered.
-		 */
-		int port = getPortFromArgs(args);
-		
-		if (port == -1)
-			this.tserver = new TerminusServer();
-		else
-			this.tserver = new TerminusServer(port);
+		this.tserver = new EventServer();
 		
 		System.out.println("Welcome to the Terminus Server\n");
 		
-		/* Get and display our listening IP address from the tserver */
+		/* Get and display our listening IP address */
 		try
 		{
-			InetAddress localHost = tserver.getLocalHost();
+			InetAddress localHost = getLocalHost();
 			System.out.println("Local IP Address: " + localHost.getHostAddress());
 		}
 		catch (SocketTimeoutException e)
@@ -45,51 +37,55 @@ public class Terminus implements ITerminusCallbacks
 			System.exit(1);
 		}
 		
-		/* Get the port from the tserver */
+		/* Start the server(s) */
 		try 
 		{
 			tserver.registerForCallbacks(this);
-			tserver.startServer();
-			System.out.println("Listening for connections on port " + String.valueOf(tserver.getAcceptPort()) + "\n");
-		} 
-		catch (IOException e) {
+			tserver.start();
+			System.out.println("Listening for connections on port " + String.valueOf(EventServer.EVENT_PORT) + "\n");
+		}
+		catch (ServerCloseException e) {
 			System.out.println(e.getMessage());
 			return;
 		}
 	}
 	
-	private int getPortFromArgs(String[] args)
+	private InetAddress getLocalHost() throws IOException, UnknownHostException, SocketTimeoutException
 	{
-		int port = 0;
-
-		if (args.length > 1)
-		{
-			System.out.println("Invalid arguments\n   Usage: Terminus [port]");
-			System.exit(1);
-		}
-		else if (args.length == 0)
-		{
-			port = -1;
-		}
-		else
-		{
-			try
-			{
-				port = Integer.parseInt(args[0]);
-				if (port < 1 || port > 60000)
-				{
-					System.out.println("Port must be between 1 and 60000");
-					System.exit(1);
-				}
-			}
-			catch (NumberFormatException e)
-			{
-				System.out.println("Invalid Port Number");
-				System.exit(1);
-			}
-		}
+		Socket s = new Socket();
+		SocketAddress address = new InetSocketAddress("www.google.com", 80);
+		s.connect(address, INTERNET_TIMEOUT);
 		
-		return port;
+		InetAddress a = s.getLocalAddress();
+		s.close();
+		return a;
+	}
+
+	@Override
+	public void connectionAdded(ATerminusConnection c)
+	{
+		String id = (c.getID() == null) ? "unknown id" : c.getID();
+		System.out.println("Connection Added:  " + id);
+	}
+	
+	@Override
+	public void connectionDropped(ATerminusConnection c)
+	{
+		String id = (c.getID() == null) ? "unknown id" : c.getID();
+		System.out.println("Connection Dropped: " + id);
+	}
+	
+	@Override
+	public void messageReceived(TerminusMessage msg)
+	{
+		switch (msg.getMessageType())
+		{
+		case TerminusMessage.MSG_TEST:
+			System.out.println("Data in: " + ((TestMessage)msg).message);
+			break;
+		default:
+			break;
+		}
 	}
 	
 	/**
@@ -99,23 +95,4 @@ public class Terminus implements ITerminusCallbacks
 	{
 		new Terminus(args);
 	}
-
-	@Override
-	public void connectionAdded()
-	{
-		System.out.println("Connection Added");
-	}
-
-	@Override
-	public void connectionDropped()
-	{
-		System.out.println("Connection Dropped");
-	}
-
-	@Override
-	public void messageReceived(TerminusMessage msg)
-	{
-		System.out.println("Data in: " + msg.message);
-	}
-
 }

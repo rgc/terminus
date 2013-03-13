@@ -1,4 +1,4 @@
-package com.example.terminusexandroidclient.connection;
+package edu.buffalo.cse.terminus.client.network;
 
 public class ConnectionResult
 {

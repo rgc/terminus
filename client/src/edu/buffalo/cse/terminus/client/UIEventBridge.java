@@ -1,13 +1,14 @@
-package com.example.terminusexandroidclient;
+package edu.buffalo.cse.terminus.client;
 
 import android.app.Activity;
 
-import com.example.terminusexandroidclient.connection.ConnectionResult;
-import com.example.terminusexandroidclient.connection.INetworkCallbacks;
-import com.example.terminusexandroidclient.connection.TerminusMessage;
+
+import edu.buffalo.cse.terminus.client.network.ConnectionResult;
+import edu.buffalo.cse.terminus.client.network.INetworkCallbacks;
+import edu.buffalo.cse.terminus.messages.TerminusMessage;
 
 public class UIEventBridge implements INetworkCallbacks
-{	
+{
 	/*
 	 *  The whole purpose of this class is to cross over threads onto the UI thread.
 	 *  

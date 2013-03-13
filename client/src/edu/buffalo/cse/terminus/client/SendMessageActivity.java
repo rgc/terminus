@@ -1,8 +1,11 @@
-package com.example.terminusexandroidclient;
+package edu.buffalo.cse.terminus.client;
 
 import java.util.ArrayList;
 
-import com.example.terminusexandroidclient.connection.*;
+import edu.buffalo.cse.terminus.client.R;
+
+import edu.buffalo.cse.terminus.client.network.*;
+import edu.buffalo.cse.terminus.messages.*;
 
 import android.os.Bundle;
 import android.app.Activity;
@@ -22,7 +25,7 @@ public class SendMessageActivity extends Activity implements INetworkCallbacks
 	private ProgressDialog hourglass;
 	private EditText txtMessage;
 	private ListView lvMessages;
-	private ConnectionModule connectionManager;
+	private TerminusConnection terminusConnection;
 	private ArrayList<String> sentMessages;
 	private ListAdapter messageViewAdapter;
 	
@@ -32,7 +35,7 @@ public class SendMessageActivity extends Activity implements INetworkCallbacks
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.main);
 		
-		connectionManager = new ConnectionModule(new UIEventBridge(this, this));
+		terminusConnection = new TerminusConnection(new UIEventBridge(this, this));
 		
 		setActivityControls();
 		
@@ -41,7 +44,7 @@ public class SendMessageActivity extends Activity implements INetworkCallbacks
 		
 		String ip = this.getIntent().getStringExtra("ipAddress");
 		int port = this.getIntent().getIntExtra("portNumber", 0);
-		connectionManager.connect(ip, port);
+		terminusConnection.connect(ip, port);
 		
 	}
 	
@@ -66,7 +69,7 @@ public class SendMessageActivity extends Activity implements INetworkCallbacks
 	
 	public void sendMessage(View view)
 	{	
-		connectionManager.send(txtMessage.getText().toString());
+		terminusConnection.sendTestMessage(txtMessage.getText().toString());
 	}
 	
 	//////////////////////   Connection Manager Callbacks   //////////////////////
@@ -142,7 +145,11 @@ public class SendMessageActivity extends Activity implements INetworkCallbacks
 	@Override
 	public void messageReceived(final TerminusMessage msg)
 	{
-		sentMessages.add(msg.message);
-		lvMessages.invalidateViews();		
+		if (msg.getMessageType() == TerminusMessage.MSG_TEST)
+		{
+			TestMessage tm = (TestMessage) msg;
+			sentMessages.add(tm.message);
+			lvMessages.invalidateViews();
+		}
 	}
 }

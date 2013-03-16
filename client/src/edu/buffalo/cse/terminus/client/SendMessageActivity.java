@@ -45,7 +45,6 @@ public class SendMessageActivity extends Activity implements INetworkCallbacks
 		String ip = this.getIntent().getStringExtra("ipAddress");
 		int port = this.getIntent().getIntExtra("portNumber", 0);
 		terminusConnection.connect(ip, port);
-		
 	}
 	
 	private void setActivityControls()
@@ -70,6 +69,11 @@ public class SendMessageActivity extends Activity implements INetworkCallbacks
 	public void sendMessage(View view)
 	{	
 		terminusConnection.sendTestMessage(txtMessage.getText().toString());
+	}
+
+	public void sendEvent(View view)
+	{	
+		terminusConnection.sendEventMessage();
 	}
 	
 	//////////////////////   Connection Manager Callbacks   //////////////////////

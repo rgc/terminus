@@ -2,6 +2,7 @@ package edu.buffalo.cse.terminus.lowlevel;
 
 import edu.buffalo.cse.terminus.lowlevel.LowLevelRegisterMessage;
 import edu.buffalo.cse.terminus.lowlevel.LowLevelTestMessage;
+import edu.buffalo.cse.terminus.messages.EventMessage;
 import edu.buffalo.cse.terminus.messages.ITerminusMessageFactory;
 import edu.buffalo.cse.terminus.messages.RegisterMessage;
 import edu.buffalo.cse.terminus.messages.RegistrationResponse;
@@ -22,8 +23,15 @@ public class LowLevelMessageFactory implements ITerminusMessageFactory
 	}
 
 	@Override
-	public RegistrationResponse getRegistrationResponse(String id) {
+	public RegistrationResponse getRegistrationResponse(String id) 
+	{
 		return new LowLevelRegResponse(id);
+	}
+
+	@Override
+	public EventMessage getEventMessage(String id) 
+	{
+		return new LowLevelEventMessage(id);
 	}
 	
 }

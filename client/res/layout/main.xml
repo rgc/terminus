@@ -29,5 +29,10 @@
         android:layout_gravity="center"
         android:onClick="sendMessage"
         android:text="@string/button_send" />
-
+	<Button
+        android:layout_width="100dp"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:onClick="sendEvent"
+        android:text="Send Events" />
 </LinearLayout>

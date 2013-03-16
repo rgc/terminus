@@ -5,6 +5,7 @@ import android.content.Context;
 import android.telephony.TelephonyManager;
 import edu.buffalo.cse.terminus.client.network.ATerminusClient;
 import edu.buffalo.cse.terminus.client.network.ConnectionResult.ConnectionStatus;
+import edu.buffalo.cse.terminus.messages.EventMessage;
 import edu.buffalo.cse.terminus.messages.ITerminusMessageFactory;
 import edu.buffalo.cse.terminus.messages.RegisterMessage;
 import edu.buffalo.cse.terminus.messages.RegistrationResponse;
@@ -74,6 +75,23 @@ public class TerminusConnection implements INetworkCallbacks
 		else
 		{
 			//TODO: Queue items, connect
+		}
+	}
+	
+	public void sendEventMessage()
+	{
+		for (int i = 0; i < 100; i ++)
+		{
+			EventMessage em = this.messageFactory.getEventMessage(this.uid);
+			terminusClient.sendMessage(em);
+			try 
+			{
+				Thread.sleep(1);
+			} 
+			catch (InterruptedException e) 
+			{
+				
+			}
 		}
 	}
 	

@@ -1,3 +1,5 @@
+import java.text.SimpleDateFormat;
+
 import eventserver.EventServer;
 import eventserver.IEventCallbacks;
 import edu.buffalo.cse.terminus.messages.*;
@@ -6,7 +8,7 @@ import shared.ATerminusConnection;
 import shared.ServerCloseException;
 
 public class Terminus implements IEventCallbacks
-{	
+{
 	private EventServer tserver;
 	
 	public Terminus(String[] args)
@@ -46,14 +48,28 @@ public class Terminus implements IEventCallbacks
 	@Override
 	public void messageReceived(ATerminusConnection connection, TerminusMessage msg)
 	{
+		if (msg == null)
+			return;
+		
 		switch (msg.getMessageType())
 		{
 		case TerminusMessage.MSG_REGISTER:
 			System.out.println("Registration Message Received.  ID == " + msg.getID());
 			break;
+			
 		case TerminusMessage.MSG_TEST:
 			System.out.println("Data in: " + ((TestMessage)msg).message);
 			break;
+			
+		case TerminusMessage.MSG_EVENT:
+			EventMessage em = (EventMessage)msg;
+			String timestamp = new SimpleDateFormat("MM/dd/yyyy hh:mm:ss").format(em.getTimestamp());
+			System.out.println("Event Received");
+			System.out.println("    From: " + msg.getID());
+			System.out.println("    Time: " + timestamp);
+			System.out.println();
+			break;
+			
 		default:
 			break;
 		}

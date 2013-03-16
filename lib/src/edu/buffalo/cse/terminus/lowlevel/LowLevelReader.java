@@ -94,7 +94,7 @@ public class LowLevelReader
 		
 		/* Get the message length */
 		msgLenBuffer.position(0);
-		msgLenBuffer.put(buffer, 0, 4).position(0);
+		msgLenBuffer.put(buffer, position, 4).position(0);
 		int remaining = msgLenBuffer.getInt();
 		
 		/* Buffers for the message */
@@ -114,7 +114,17 @@ public class LowLevelReader
 			{
 				msgBuffer.put(buffer, position, remaining);
 				numBytes -= remaining;
-				position = (numBytes == 0) ? 0 : remaining;
+				if (numBytes == 0)
+				{
+					//No bytes left to process
+					position = 0;
+				}
+				else
+				{
+					// We just processed 'remaining' bytes. Jump ahead by this amount.
+					position += remaining;
+				}
+				
 				remaining = 0;
 			}
 			else
@@ -143,9 +153,15 @@ public class LowLevelReader
 			case TerminusMessage.MSG_REGISTER:
 				m = new LowLevelRegisterMessage(id);
 				break;
+				
 			case TerminusMessage.MSG_REG_RESPONSE:
 				m = new LowLevelRegResponse(id);
 				break;
+			
+			case TerminusMessage.MSG_EVENT:
+				m = new LowLevelEventMessage(id);
+				break;
+				
 			case TerminusMessage.MSG_TEST:
 				m = new LowLevelTestMessage(id);
 				break;

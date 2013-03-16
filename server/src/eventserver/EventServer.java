@@ -190,6 +190,10 @@ public class EventServer implements IEventCallbacks, ITerminusServer
 			case TerminusMessage.MSG_REGISTER:
 				registrationRequest(msg);
 				break;
+			
+			case TerminusMessage.MSG_EVENT:
+				processEvent(msg);
+				break;
 				
 			default:
 				break;
@@ -217,6 +221,13 @@ public class EventServer implements IEventCallbacks, ITerminusServer
 		RegistrationResponse response = messageFactory.getRegistrationResponse(id);
 		response.setResult(RegistrationResponse.REGISTRATION_SUCCESS);
 		msg.connection.sendMessage(response);
+	}
+	
+	private void processEvent(QueuedMessage qm)
+	{
+		//TODO do something with the event!
+		//		Alternatively, just register all handlers 
+		//		for to receive callbacks
 	}
 	
 	// /////////////////////////// NETWORK EVENTS /////////////////////////////

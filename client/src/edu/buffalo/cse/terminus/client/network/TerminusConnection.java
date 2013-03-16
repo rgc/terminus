@@ -32,7 +32,6 @@ public class TerminusConnection implements INetworkCallbacks
 		Registered
 	}
 	
-	//TODO: Set user id
 	private String uid;
 	private INetworkCallbacks callbacks;
 	private ConnectionState curConnectionState;

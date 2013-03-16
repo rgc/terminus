@@ -6,6 +6,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.List;
 
 import android.app.Activity;
 import android.hardware.Camera;
@@ -16,9 +17,12 @@ import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.media.MediaRecorder;
 import android.os.Bundle;
+import android.os.ConditionVariable;
 import android.os.Environment;
+import android.os.SystemClock;
 import android.provider.MediaStore;
 import android.util.Log;
+import android.view.SurfaceHolder;
 import android.view.View;
 import android.widget.Button;
 import android.widget.FrameLayout;
@@ -28,8 +32,11 @@ public class MainActivity extends Activity implements SensorEventListener{
 
 private Camera mCamera;
 private CameraPreview mPreview;
+private SurfaceHolder mHolder;
+public byte[] basePicF, basePicB;
 public static final int MEDIA_TYPE_IMAGE = 1;
 private SensorManager mSensorManager;
+public boolean sensorsInitilized = false;
 public boolean sensdet = false;
 public float[] xacel = new float[5];
 public float[] yacel = new float[5];
@@ -37,127 +44,309 @@ public float[] zacel = new float[5];
 public float[] spresure = new float[5];
 public float[] llevel = new float[5];
 public float[] mlevel = new float[5];
-//how sensitive do you want detection
+//how sensitive do you want detection, smaller number is more sensitive
 public static final int vibrationfactor=20,soundfactor=100000,lightfactor=20,magnetfactor=20;
 TextView xCoor,yCoor,zCoor,soundLev,lightLev,magLev;
+FrameLayout preview;
 private static final String TAG = "MyCameraMain";
 private MediaRecorder mRecorder = null;
 //enable sensors
-public boolean sounde=true, accele=true;
-
+public boolean sounde=true, accele=true, lighte=true, magnete=true;
+public boolean initpic=false, diffpic=true, multicam=false, secpic=false;
+public int currcam=0;
+private ConditionVariable picLock = new ConditionVariable();
 
 @Override
 public void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
     setContentView(R.layout.activity_main);
-    Button captureButton = (Button) findViewById(R.id.button_capture);
-    System.out.println("Starting!");
-
+    
+    /*Button captureButton = (Button) findViewById(R.id.button_capture);
+    
+    if(Camera.getNumberOfCameras()==2){
+    	multicam=true;
+    	Log.d(TAG, "2cams");
+    }
     // Create an instance of Camera
-    mCamera = getCameraInstance();
+    mCamera = getCameraInstance(currcam);
     // Create our Preview view and set it as the content of our activity.
+    //mPreview = new CameraPreview(this, mCamera);
+    //FrameLayout preview = (FrameLayout) findViewById(R.id.camera_preview);
+    //preview.addView(mPreview);
+    //setcamprev();
+    
     mPreview = new CameraPreview(this, mCamera);
     FrameLayout preview = (FrameLayout) findViewById(R.id.camera_preview);
     preview.addView(mPreview);
+    
+    // Add a listener to the Capture button
+	captureButton.setOnClickListener(
 
-/*    final PictureCallback mPicture = new PictureCallback() {
+			new View.OnClickListener() {
 
-        public void onPictureTaken(byte[] data, Camera camera) {
+				public void onClick(View v) {
+					// get an image from the camera   
+					Log.d(TAG, "buttonpress");
+					initpic=true;
+					takepic();
+					mCamera.takePicture(null, null, mPicture);
+					
+					/*if(multicam==true){
+						swapcam();
+						mCamera.takePicture(null, null, mPicture);
+					}
+				}
+			}
+	);*/
+	
+	
+    // Get the SensorManager 
+    /*mSensorManager= (SensorManager) getSystemService(SENSOR_SERVICE);
+    List<Sensor> msensorList = mSensorManager.getSensorList(Sensor.TYPE_ALL);
+    String SensListName = new String("");
+    String SensListType = new String("");
+    Sensor tmp;
+    int i;
+    for (i=0;i<msensorList.size();i++){
+    	tmp = msensorList.get(i);
+    	SensListName = " "+SensListName+tmp.getName(); // Add the sensor name to the string of sensors available
+		mSensorManager.registerListener(this, mSensorManager.getDefaultSensor(tmp.getType()),SensorManager.SENSOR_DELAY_UI);
 
-            File pictureFile = getOutputMediaFile(MEDIA_TYPE_IMAGE);
-
-            if (pictureFile == null){
-                return;
-            }
-
-            try {
-                FileOutputStream fos = new FileOutputStream(pictureFile);
-                fos.write(data);
-                fos.close();
-                MediaStore.Images.Media.insertImage(getContentResolver(), pictureFile.getAbsolutePath(), pictureFile.getName(), pictureFile.getName());
-            } catch (FileNotFoundException e) {
-
-            } catch (IOException e) {
-
-            }
-          }
-        };*/
-
-
-
-
-
-     // Add a listener to the Capture button
-        captureButton.setOnClickListener(
-
-            new View.OnClickListener() {
-
-                public void onClick(View v) {
-                    // get an image from the camera   
-
-                    System.out.println("Photo Taking!");
-                    mCamera.takePicture(null, null, mPicture);
-
-
-
-                }
-            }
-        );
-
-        // Get the SensorManager 
-        mSensorManager= (SensorManager) getSystemService(SENSOR_SERVICE);
-        xCoor=(TextView)findViewById(R.id.xcoor); // create X axis object
-		yCoor=(TextView)findViewById(R.id.ycoor); // create Y axis object
-		zCoor=(TextView)findViewById(R.id.zcoor); // create Z axis object
-		mSensorManager.registerListener(this, mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER),SensorManager.SENSOR_DELAY_UI);
-		
-		lightLev=(TextView)findViewById(R.id.lightLev);
-		mSensorManager.registerListener(this, mSensorManager.getDefaultSensor(Sensor.TYPE_LIGHT),SensorManager.SENSOR_DELAY_UI);
-		
-		magLev=(TextView)findViewById(R.id.magLev);
-		mSensorManager.registerListener(this, mSensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD),SensorManager.SENSOR_DELAY_UI);
-		Log.d(TAG, "0");
-		
-		soundLev=(TextView)findViewById(R.id.soundLev);
-		startRecording();
-
+    }
+    
+    xCoor=(TextView)findViewById(R.id.xcoor); // create X axis object
+	yCoor=(TextView)findViewById(R.id.ycoor); // create Y axis object
+	zCoor=(TextView)findViewById(R.id.zcoor); // create Z axis object
+	//mSensorManager.registerListener(this, mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER),SensorManager.SENSOR_DELAY_UI);
+	
+	lightLev=(TextView)findViewById(R.id.lightLev);
+	//mSensorManager.registerListener(this, mSensorManager.getDefaultSensor(Sensor.TYPE_LIGHT),SensorManager.SENSOR_DELAY_UI);
+	
+	magLev=(TextView)findViewById(R.id.magLev);
+	//mSensorManager.registerListener(this, mSensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD),SensorManager.SENSOR_DELAY_UI);
+	Log.d(TAG, "0");
+	
+	soundLev=(TextView)findViewById(R.id.soundLev);
+	startRecording();*/
+    
+    
+    camerainit();
+    //sensorinit();
+    
 }
 
 final PictureCallback mPicture = new PictureCallback() {
 
     public void onPictureTaken(byte[] data, Camera camera) {
+    	byte[] tempPic = new byte[data.length];
+    	tempPic = data;
+    	Log.d(TAG, "takingpic1");
+    	//picLock.open();
+    	Log.d(TAG, "takingpic2");
+    	if(initpic==true){//new initial picture
+    		Log.d(TAG, "basepictomem1");
+    		//basePicB = new byte[data.length];
+    		Log.d(TAG, "basepictomem2");
+    		//basePicB = data;
+    		Log.d(TAG, "basepictomem3");
+    	}
+    	else{//check if image is different from base picture
+    		checkImage(basePicB, tempPic);
+    	}
+        if((initpic==true)||(diffpic==true)){//picture is interesting so save it
+	    	File pictureFile = getOutputMediaFile(MEDIA_TYPE_IMAGE);
+	
+	        if (pictureFile == null){
+	            return;
+	        }
+	
+	        try {
+	            FileOutputStream fos = new FileOutputStream(pictureFile);
+	            
+	            
+	            fos.write(tempPic);
+	            fos.close();
+	            MediaStore.Images.Media.insertImage(getContentResolver(), pictureFile.getAbsolutePath(), pictureFile.getName(), pictureFile.getName());
+	            Log.d(TAG, "writepic");
+	            //picLock.open();
+	        } catch (FileNotFoundException e) {
+	
+	        } catch (IOException e) {
+	
+	        }
+    	}
+        //holdpic=false;
+        if(multicam==true){
+    		//swapcam();
+    		//mCamera.takePicture(null, null, mPicture);
+    	
+    	}
 
-        File pictureFile = getOutputMediaFile(MEDIA_TYPE_IMAGE);
-
-        if (pictureFile == null){
-            return;
-        }
-
-        try {
-            FileOutputStream fos = new FileOutputStream(pictureFile);
-            fos.write(data);
-            fos.close();
-            MediaStore.Images.Media.insertImage(getContentResolver(), pictureFile.getAbsolutePath(), pictureFile.getName(), pictureFile.getName());
-        } catch (FileNotFoundException e) {
-
-        } catch (IOException e) {
-
-        }
       }
 };
 
 
+private void camerainit(){//must finish before starting sensorinit
+    Button captureButton = (Button) findViewById(R.id.button_capture);
+    
+    if(Camera.getNumberOfCameras()==2){
+    	multicam=true;
+    	Log.d(TAG, "2cams");
+    }
+    // Create an instance of Camera
+    mCamera = getCameraInstance(currcam);
+    // Create our Preview view and set it as the content of our activity.
+    //mPreview = new CameraPreview(this, mCamera);
+    //FrameLayout preview = (FrameLayout) findViewById(R.id.camera_preview);
+    //preview.addView(mPreview);
+    preview = (FrameLayout) findViewById(R.id.camera_preview);
+    setcamprev();
+    
+    //mPreview = new CameraPreview(this, mCamera);
+    //FrameLayout preview = (FrameLayout) findViewById(R.id.camera_preview);
+    //preview.addView(mPreview);
+    
+    // Add a listener to the Capture button
+	captureButton.setOnClickListener(
+
+			new View.OnClickListener() {
+
+				public void onClick(View v) {
+					// get an image from the camera   
+					Log.d(TAG, "buttonpress");
+					initpic=true;
+					takepic();
+					if(sensorsInitilized==false){
+						sensorsInitilized=true;
+						sensorinit();
+					}
+					//mCamera.takePicture(null, null, mPicture);
+					
+					/*if(multicam==true){
+						swapcam();
+						mCamera.takePicture(null, null, mPicture);
+					}*/
+				}
+			}
+	);
+}
+
+private void sensorinit(){
+    // Get the SensorManager 
+    mSensorManager= (SensorManager) getSystemService(SENSOR_SERVICE);
+    List<Sensor> msensorList = mSensorManager.getSensorList(Sensor.TYPE_ALL);
+    String SensListName = new String("");
+    String SensListType = new String("");
+    Sensor tmp;
+    int i;
+    for (i=0;i<msensorList.size();i++){
+    	tmp = msensorList.get(i);
+    	SensListName = " "+SensListName+tmp.getName(); // Add the sensor name to the string of sensors available
+		mSensorManager.registerListener(this, mSensorManager.getDefaultSensor(tmp.getType()),SensorManager.SENSOR_DELAY_UI);
+
+    }
+    
+    xCoor=(TextView)findViewById(R.id.xcoor); // create X axis object
+	yCoor=(TextView)findViewById(R.id.ycoor); // create Y axis object
+	zCoor=(TextView)findViewById(R.id.zcoor); // create Z axis object
+	//mSensorManager.registerListener(this, mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER),SensorManager.SENSOR_DELAY_UI);
+	
+	lightLev=(TextView)findViewById(R.id.lightLev);
+	//mSensorManager.registerListener(this, mSensorManager.getDefaultSensor(Sensor.TYPE_LIGHT),SensorManager.SENSOR_DELAY_UI);
+	
+	magLev=(TextView)findViewById(R.id.magLev);
+	//mSensorManager.registerListener(this, mSensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD),SensorManager.SENSOR_DELAY_UI);
+	Log.d(TAG, "0");
+	
+	soundLev=(TextView)findViewById(R.id.soundLev);
+	startRecording();
+}
+
 /** A safe way to get an instance of the Camera object. */
-public static Camera getCameraInstance(){
+public static Camera getCameraInstance(int cn){
     Camera c = null;
     try {
-        c = Camera.open(); // attempt to get a Camera instance
+        c = Camera.open(cn); // attempt to get a Camera instance requires sdk 9
     }
     catch (Exception e){
         // Camera is not available (in use or does not exist)
     }
     return c; // returns null if camera is unavailable
 }
+
+private void setcamprev(){//call this when switching cameras
+    mPreview = new CameraPreview(this, mCamera, secpic);
+    //FrameLayout preview = (FrameLayout) findViewById(R.id.camera_preview);
+    preview.addView(mPreview);
+    //mHolder = mPreview.getHolder();
+    //mHolder.addCallback(this);
+    //mHolder.setType(SurfaceHolder.SURFACE_TYPE_PUSH_BUFFERS);
+    
+    /*try {
+		mCamera.setPreviewDisplay(mHolder);
+	} catch (IOException e) {
+		// TODO Auto-generated catch block
+		e.printStackTrace();
+	}*/
+    
+    try {
+		mCamera.setPreviewDisplay(mPreview.getHolder());
+		Log.d(TAG, "swapcam3.1");
+	} catch (IOException e) {
+		Log.d(TAG, "swapcam3.2");
+		e.printStackTrace();
+	}
+	mCamera.startPreview();
+    Log.d(TAG, "swapcam3.5");
+    //SystemClock.sleep(1000);
+    if(secpic==true){
+        /*try {
+			mCamera.wait();
+		} catch (InterruptedException e) {
+			
+			e.printStackTrace();
+		}*/
+    	secpic = false;
+    	Log.d(TAG, "swapcam5");
+    	//mCamera.takePicture(null, null, mPicture);
+    	Log.d(TAG, "swapcam6");
+    }
+}
+
+private void swapcam(){
+	Log.d(TAG, "picloc1");
+	//picLock.block(5000);
+	Log.d(TAG, "picloc2");
+	if(currcam==0){
+		currcam=1;
+	}else{
+		currcam=0;
+	}
+	Log.d(TAG, "swapcam1");
+	mCamera.release();
+	preview.removeView(mPreview);
+	Log.d(TAG, "swapcam2");
+	mCamera = getCameraInstance(currcam);
+	Log.d(TAG, "swapcam3");
+	setcamprev();
+	//Log.d(TAG, "swapcam4");
+
+}
+
+private void takepic(){//call this when you need to take a picture
+	//holdpic=true;
+	mCamera.takePicture(null, null, mPicture);
+	//while(holdpic==true){
+	//}
+	
+
+	if(multicam==true){
+		//swapcam();
+		//mCamera.takePicture(null, null, mPicture);
+		secpic = true;
+	}
+}
+
 
 @Override
 protected void onPause() {
@@ -196,14 +385,29 @@ private  File getOutputMediaFile(int type){
     }
 
     // Create a media file name
-    String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
+    String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss.SSS").format(new Date());
     File mediaFile;
+    String tmpSide = "REAR_";
+    if (currcam==1){
+    	tmpSide = "FRONT_";
+    }
     if (type == MEDIA_TYPE_IMAGE){
-        mediaFile = new File(mediaStorageDir.getPath() + File.separator + "IMG_"+ timeStamp + ".jpg");
-    } else {
+    	//check if this needs to be initial image
+    	if(initpic==true){
+    		initpic=false;
+    		mediaFile = new File(mediaStorageDir.getPath() + File.separator + tmpSide + "INIT_IMG_"+ timeStamp + ".jpg");
+    		Log.d(TAG, "initpic");
+    		//this.notify();
+    	}
+    	else{
+    		mediaFile = new File(mediaStorageDir.getPath() + File.separator + tmpSide + "IMG_"+ timeStamp + ".jpg");
+    	}
+    }
+    else {
         return null;
     }
-
+    
+    
     return mediaFile;
 }
 
@@ -216,7 +420,10 @@ public void onAccuracyChanged(Sensor arg0, int arg1) {
 	
 }
 
-
+public void checkImage(byte[] base, byte[] current){
+	// TODO algo to compare byte arrays and set diffpic to false if they are the same
+	return;
+}
 
 
 //shift array
@@ -259,7 +466,7 @@ public void onSensorChanged(SensorEvent event) {
 		if((dx > vibrationfactor)||(dy > vibrationfactor)||(dz > vibrationfactor)){
 			Log.d(TAG, "vibration1");
 			sensdet = true;
-			mCamera.takePicture(null, null, mPicture);
+			takepic();
 		}
 		
 	}
@@ -274,7 +481,7 @@ public void onSensorChanged(SensorEvent event) {
 		if(llevel[0] > lightfactor){
 			Log.d(TAG, "light1");
 			sensdet = true;
-			//mCamera.takePicture(null, null, mPicture);
+			takepic();
 		}
 		
 	}
@@ -289,10 +496,41 @@ public void onSensorChanged(SensorEvent event) {
 		//if(mlevel[0] > magnetfactor){
 			Log.d(TAG, "ferrous2");
 			sensdet = true;
-			//mCamera.takePicture(null, null, mPicture);
+			takepic();
 		}
 		
 	}
+	if(event.sensor.getType()==Sensor.TYPE_AMBIENT_TEMPERATURE){
+		
+	}
+	if(event.sensor.getType()==Sensor.TYPE_GRAVITY){
+		
+	}
+	if(event.sensor.getType()==Sensor.TYPE_GYROSCOPE){
+		
+	}
+	if(event.sensor.getType()==Sensor.TYPE_LINEAR_ACCELERATION){
+		
+	}
+	if(event.sensor.getType()==Sensor.TYPE_ORIENTATION){
+		
+	}
+	if(event.sensor.getType()==Sensor.TYPE_PRESSURE){
+		
+	}
+	if(event.sensor.getType()==Sensor.TYPE_PROXIMITY){
+		
+	}
+	if(event.sensor.getType()==Sensor.TYPE_RELATIVE_HUMIDITY){
+		
+	}
+	if(event.sensor.getType()==Sensor.TYPE_ROTATION_VECTOR){
+		
+	}
+	if(event.sensor.getType()==Sensor.TYPE_TEMPERATURE){
+		
+	}
+
 	
 	//is sound enabled
 	if(sounde==true){

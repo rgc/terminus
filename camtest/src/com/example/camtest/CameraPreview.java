@@ -2,6 +2,7 @@ package com.example.camtest;
 
 import android.content.Context;
 import android.hardware.Camera;
+import android.util.Log;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 
@@ -9,11 +10,13 @@ public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback
 
     private SurfaceHolder mHolder;
     private Camera mCamera;
+    private boolean secpic;
+    private static final String TAG = "MyCameraPreview";
 
-    public CameraPreview(Context context,Camera camera) {
+    public CameraPreview(Context context,Camera camera, boolean pictwo) {
         super(context);
         mCamera = camera;
-
+        secpic=pictwo;
         /*SurfaceView view = new SurfaceView(this);
         c.setPreviewDisplay(view.getHolder());
         c.startPreview();
@@ -31,34 +34,38 @@ public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback
 
     }
 
-    public void surfaceChanged(SurfaceHolder holder, int format, int width,
-            int height) {
-        // TODO Auto-generated method stub
-
+    public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
+        
+    	Log.d(TAG, "surface");
         if (mHolder.getSurface() == null){
             // preview surface does not exist
-            return;
-          }
-
-          // stop preview before making changes
-          try {
-              mCamera.stopPreview();
-          } catch (Exception e){
-            // ignore: tried to stop a non-existent preview
-          }
-
-          // set preview size and make any resize, rotate or
-          // reformatting changes here
-
-          // start preview with new settings
-          try {
-              mCamera.setPreviewDisplay(mHolder);
-              mCamera.startPreview();
-
-          } catch (Exception e){
-
-          }
-
+        	return;
+        }
+        
+        // stop preview before making changes
+        try {
+        	mCamera.stopPreview();
+        } 
+        catch (Exception e){
+		    // ignore: tried to stop a non-existent preview
+        }
+		
+        // set preview size and make any resize, rotate or
+        // reformatting changes here
+		
+        // start preview with new settings
+        try {
+        	mCamera.setPreviewDisplay(mHolder);
+        	mCamera.startPreview();
+		
+        } catch (Exception e){
+		
+        }
+        /*if(secpic==true){
+			mCamera.notify();
+			secpic=false;
+		}*/
+        
     }
 
     public void surfaceCreated(SurfaceHolder holder) {

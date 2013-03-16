@@ -134,18 +134,26 @@ public class LowLevelReader
 	
 	private TerminusMessage getTypeSpecificMessage(byte[] message)
 	{
-		/* Read in the type */
-		ByteBuffer typeBuffer = ByteBuffer.allocate(4).order(ByteOrder.BIG_ENDIAN);
-		typeBuffer.put(message, 4, 4).position(0);
-		int msgType = typeBuffer.getInt();
+		int msgType = LowLevelHelper.readInt(message, LowLevelHelper.TYPE_START);
+		String id = LowLevelHelper.readString(message, LowLevelHelper.ID_START);
+		TerminusMessage m = null;
 		
 		switch (msgType)
 		{
+			case TerminusMessage.MSG_REGISTER:
+				m = new LowLevelRegisterMessage(id);
+				break;
+			case TerminusMessage.MSG_REG_RESPONSE:
+				m = new LowLevelRegResponse(id);
+				break;
 			case TerminusMessage.MSG_TEST:
-				LowLevelTestMessage m = new LowLevelTestMessage(message);
-				return m;
+				m = new LowLevelTestMessage(id);
+				break;
+				
 			default:
-				return null;	
+				return null;
 		}
+		((ILowLevelMessage)m).loadFromBytes(message);
+		return m;
 	}
 }

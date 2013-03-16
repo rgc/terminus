@@ -3,36 +3,37 @@ package edu.buffalo.cse.terminus.lowlevel;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 
-import edu.buffalo.cse.terminus.messages.TestMessage;
+import edu.buffalo.cse.terminus.messages.RegisterMessage;
 
-public class LowLevelTestMessage extends TestMessage implements ILowLevelMessage
+public class LowLevelRegisterMessage extends RegisterMessage implements ILowLevelMessage
 {	
-	public LowLevelTestMessage(String id) 
+	public LowLevelRegisterMessage()
+	{
+		super();
+	}
+	
+	public LowLevelRegisterMessage(String id)
 	{
 		super(id);
 	}
-
+	
 	@Override
 	public void loadFromBytes(byte[] msg)
 	{
-		if (msg.length < LowLevelHelper.MIN_LENGTH)
-			return;
-		
-		this.message = LowLevelHelper.readString(msg, LowLevelHelper.getPayloadStart(this));
+		this.regType = LowLevelHelper.readInt(msg, LowLevelHelper.getPayloadStart(this));
 	}
 	
 	@Override
-	public byte[] getBytes()
+	public byte[] getBytes() 
 	{
 		ByteArrayOutputStream os = new ByteArrayOutputStream();
 		
 		try
-		{
+		{	
 			LowLevelHelper.putMessageHeader(this, os);
 			
-			/* This is the payload for test messages */
-			os.write(this.message.getBytes());
-			os.write(0);
+			//Payload is the reg type
+			os.write(LowLevelHelper.getIntArray((this.regType)));
 			
 			byte[] fullMessage = os.toByteArray();
 			LowLevelHelper.putMessageLength(fullMessage);

@@ -35,7 +35,7 @@ public class SendMessageActivity extends Activity implements INetworkCallbacks
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.main);
 		
-		terminusConnection = new TerminusConnection(new UIEventBridge(this, this));
+		terminusConnection = new TerminusConnection(new UIEventBridge(this, this), this);
 		
 		setActivityControls();
 		

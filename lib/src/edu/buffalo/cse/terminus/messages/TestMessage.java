@@ -7,10 +7,12 @@ public class TestMessage extends TerminusMessage
 	public TestMessage()
 	{
 		super();
+		this.type = TerminusMessage.MSG_TEST;
 	}
 	
 	public TestMessage(String id)
 	{
 		super(id);
+		this.type = TerminusMessage.MSG_TEST;
 	}
 }

@@ -59,7 +59,7 @@ public class LowLevelConnection extends ATerminusConnection
 					{
 						//TerminusMessage message = LowLevelShared.getNextMessage(socket);
 						TerminusMessage message = reader.getNextMessage();
-						eventClient.messageReceived(message);
+						eventClient.messageReceived(LowLevelConnection.this, message);
 					}
 					catch (IOException e)
 					{

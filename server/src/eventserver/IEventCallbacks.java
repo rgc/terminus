@@ -12,5 +12,5 @@ public interface IEventCallbacks
 {
 	public void connectionAdded(ATerminusConnection connection);
 	public void connectionDropped(ATerminusConnection connection);
-	public void messageReceived(TerminusMessage msg);
+	public void messageReceived(ATerminusConnection connection, TerminusMessage msg);
 }

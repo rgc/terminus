@@ -3,7 +3,6 @@ package lowlevelserver;
 import java.net.*;
 import java.io.*;
 
-import eventserver.EventServer;
 import eventserver.IEventCallbacks;
 
 import shared.ITerminusServer;
@@ -15,10 +14,10 @@ public class LowLevelServer implements ITerminusServer
 	private ServerSocket server = null;
 	private IEventCallbacks callback;
 
-	public LowLevelServer(IEventCallbacks c)
+	public LowLevelServer(IEventCallbacks c, int port)
 	{
 		this.callback = c;
-		this.acceptPort = EventServer.EVENT_PORT;
+		this.acceptPort = port;
 	}
 
 	@Override

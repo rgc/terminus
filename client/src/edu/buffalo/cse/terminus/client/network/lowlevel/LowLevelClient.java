@@ -8,8 +8,8 @@ import java.nio.ByteBuffer;
 import edu.buffalo.cse.terminus.client.network.ATerminusClient;
 import edu.buffalo.cse.terminus.client.network.ConnectionResult;
 import edu.buffalo.cse.terminus.client.network.ConnectionResult.ConnectionStatus;
+import edu.buffalo.cse.terminus.lowlevel.ILowLevelMessage;
 import edu.buffalo.cse.terminus.lowlevel.LowLevelReader;
-import edu.buffalo.cse.terminus.lowlevel.LowLevelTestMessage;
 
 import edu.buffalo.cse.terminus.messages.TerminusMessage;
 
@@ -100,7 +100,7 @@ public class LowLevelClient extends ATerminusClient
 		}).start();
 
 	}
-
+	
 	@Override
 	public void disconnect()
 	{
@@ -141,7 +141,7 @@ public class LowLevelClient extends ATerminusClient
 				try
 				{
 					out = new DataOutputStream(socket.getOutputStream());
-					byte[] b  = ((LowLevelTestMessage) m).getBytes();
+					byte[] b  = ((ILowLevelMessage) m).getBytes();
 					if (b == null)
 						return;
 					

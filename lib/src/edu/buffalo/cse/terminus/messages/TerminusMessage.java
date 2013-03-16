@@ -2,6 +2,8 @@ package edu.buffalo.cse.terminus.messages;
 
 public abstract class TerminusMessage
 {
+	public static final int MSG_REGISTER = 0x1;
+	public static final int MSG_REG_RESPONSE = 0x2;
 	public static final int MSG_TEST = 0xFFFF;
 	
 	/*

@@ -1,5 +1,12 @@
 package eventserver;
 
+import java.io.IOException;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.Socket;
+import java.net.SocketAddress;
+import java.net.SocketTimeoutException;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ConcurrentHashMap;
@@ -8,25 +15,67 @@ import lowlevelserver.LowLevelServer;
 import shared.ATerminusConnection;
 import shared.ITerminusServer;
 import shared.ServerCloseException;
+import edu.buffalo.cse.terminus.lowlevel.LowLevelMessageFactory;
+import edu.buffalo.cse.terminus.messages.ITerminusMessageFactory;
+import edu.buffalo.cse.terminus.messages.RegistrationResponse;
 import edu.buffalo.cse.terminus.messages.TerminusMessage;
 
 /*
  * This class handles handles the message processing portion of event handling.
- * Also, this class acts as a bridge to the implmentation defined communications portion.
+ * Also, this class acts as a bridge to the implementation defined communications portion.
  */
 public class EventServer implements IEventCallbacks, ITerminusServer
 {
-	public static final int EVENT_PORT = 34410;
-
+	public static final int EVENT_PORT = 34411;
+	public static final int INTERNET_TIMEOUT = 10000;
+	
+	class QueuedMessage
+	{
+		ATerminusConnection connection;
+		TerminusMessage message;
+		
+		public QueuedMessage(ATerminusConnection c, TerminusMessage m)
+		{
+			this.connection = c;
+			this.message = m;
+		}
+	}
+	
+	/* Implementation specific communication */
 	private ITerminusServer eventCom;
-
-	private final ArrayList<IEventCallbacks> eventClients = new ArrayList<IEventCallbacks>();
-	private final ConcurrentLinkedQueue<TerminusMessage> eventQueue = new ConcurrentLinkedQueue<TerminusMessage>();
-	private final ConcurrentHashMap<String, ATerminusConnection> sessions = new ConcurrentHashMap<String, ATerminusConnection>();
-
+	
+	/* Implementation specific message generator */
+	private ITerminusMessageFactory messageFactory;
+	
+	/* List of parties interested in events */
+	private final ArrayList<IEventCallbacks> eventClients;
+	
+	/* 
+	 *  Queued events
+	 * 
+	 *  We have a thread whose job is to process the queued events.
+	 *  Right now everything goes into this one queue.  We could change this
+	 *  to separate out the registration requests and other higher priority
+	 *  messages.
+	 */
+	private final ConcurrentLinkedQueue<QueuedMessage> eventQueue;
+	
+	/* 
+	 * Active connections.
+	 * 
+	 * This may be useful for brocasting messages.
+	 */
+	private final ConcurrentHashMap<String, ATerminusConnection> sessions;
+	
+	private String eventServerIP;
+	
 	public EventServer()
 	{
-		eventCom = new LowLevelServer(this);
+		eventClients = new ArrayList<IEventCallbacks>();
+		eventQueue = new ConcurrentLinkedQueue<QueuedMessage>();
+		sessions = new ConcurrentHashMap<String, ATerminusConnection>();
+		eventCom = new LowLevelServer(this, EVENT_PORT);
+		messageFactory = new LowLevelMessageFactory();
 	}
 
 	public void registerForCallbacks(IEventCallbacks t)
@@ -56,8 +105,25 @@ public class EventServer implements IEventCallbacks, ITerminusServer
 	@Override
 	public void start() throws ServerCloseException
 	{
+		try
+		{
+			eventServerIP = EventServer.getLocalHost().getHostAddress();
+		}
+		catch (SocketTimeoutException e)
+		{
+			throw new ServerCloseException(e.getMessage());
+		}
+		catch (UnknownHostException e)
+		{
+			throw new ServerCloseException(e.getMessage());
+		}
+		catch (IOException e)
+		{
+			throw new ServerCloseException(e.getMessage());
+		}
+		
 		eventCom.start();
-		processMessages();
+		runMessageProcThread();
 	}
 
 	@Override
@@ -74,7 +140,7 @@ public class EventServer implements IEventCallbacks, ITerminusServer
 		eventQueue.clear();
 	}
 
-	private void processMessages()
+	private void runMessageProcThread()
 	{
 		new Thread(new Runnable()
 		{
@@ -85,18 +151,12 @@ public class EventServer implements IEventCallbacks, ITerminusServer
 				{
 					if (!eventQueue.isEmpty())
 					{
-						/*
-						 * TODO: Do something meaningful here.
-						 *  	 This is just to test the architecture.
-						 */
-						TerminusMessage m = eventQueue.remove();
-						ATerminusConnection c = sessions.get("1");
-						if (c != null)
-							c.sendMessage(m);
-
+						QueuedMessage qm = eventQueue.remove();
+						EventServer.this.processMessage(qm);
+							
 						for (IEventCallbacks t : EventServer.this.eventClients)
 						{
-							t.messageReceived(m);
+							t.messageReceived(qm.connection, qm.message);
 						}
 					}
 
@@ -113,6 +173,52 @@ public class EventServer implements IEventCallbacks, ITerminusServer
 		}).start();
 	}
 
+	private void processMessage(QueuedMessage msg)
+	{
+		if (msg == null)
+			return;
+		
+		switch (msg.message.getMessageType())
+		{
+			case TerminusMessage.MSG_TEST:
+				if (msg.connection != null)
+				{
+					msg.connection.sendMessage(msg.message);
+				}
+				break;
+				
+			case TerminusMessage.MSG_REGISTER:
+				registrationRequest(msg);
+				break;
+				
+			default:
+				break;
+		}
+	}
+	
+	private void registrationRequest(QueuedMessage msg)
+	{
+		/*
+		 * Right now we simply accept the registration and
+		 * register the session.
+		 * 
+		 * In the future, this is where we could talk to an
+		 * authentication server and run an authentication protocol.
+		 */
+		
+		String id = msg.message.getID();
+		
+		if (sessions.contains(id))
+		{
+			sessions.remove(id);
+		}
+		
+		sessions.put(id, msg.connection);
+		RegistrationResponse response = messageFactory.getRegistrationResponse(id);
+		response.setResult(RegistrationResponse.REGISTRATION_SUCCESS);
+		msg.connection.sendMessage(response);
+	}
+	
 	// /////////////////////////// NETWORK EVENTS /////////////////////////////
 
 	/*
@@ -122,12 +228,6 @@ public class EventServer implements IEventCallbacks, ITerminusServer
 	@Override
 	public synchronized void connectionAdded(ATerminusConnection connection)
 	{
-		if (sessions.containsKey("1"))
-			sessions.remove("1");
-
-		// sessions.put(connection.getID(), connection);
-		sessions.put("1", connection);
-
 		/*
 		 * Pass the event on to whoever else needs to know
 		 */
@@ -147,11 +247,29 @@ public class EventServer implements IEventCallbacks, ITerminusServer
 	}
 
 	@Override
-	public synchronized void messageReceived(TerminusMessage msg)
+	public synchronized void messageReceived(ATerminusConnection connection, TerminusMessage msg)
 	{
 		/*
 		 * Just queue the message, it'll get processed by the processing thread.
 		 */
-		eventQueue.add(msg);
+		if (msg != null)
+			eventQueue.add(new QueuedMessage(connection, msg));
 	}
+	
+	public String getEventServerIP()
+	{
+		return this.eventServerIP;
+	}
+	
+	private static InetAddress getLocalHost() throws IOException, UnknownHostException, SocketTimeoutException
+	{
+		Socket s = new Socket();
+		SocketAddress address = new InetSocketAddress("www.google.com", 80);
+		s.connect(address, INTERNET_TIMEOUT);
+		
+		InetAddress a = s.getLocalAddress();
+		s.close();
+		return a;
+	}
+	
 }

@@ -2,6 +2,7 @@ package com.example.camtest;
 
 import android.content.Context;
 import android.hardware.Camera;
+import android.hardware.Camera.PictureCallback;
 import android.util.Log;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
@@ -12,11 +13,13 @@ public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback
     private Camera mCamera;
     private boolean secpic;
     private static final String TAG = "MyCameraPreview";
+    private PictureCallback mPicture;
 
-    public CameraPreview(Context context,Camera camera, boolean pictwo) {
+    public CameraPreview(Context context,Camera camera, boolean pictwo, PictureCallback Picture) {
         super(context);
         mCamera = camera;
         secpic=pictwo;
+        mPicture=Picture;
         /*SurfaceView view = new SurfaceView(this);
         c.setPreviewDisplay(view.getHolder());
         c.startPreview();
@@ -61,10 +64,11 @@ public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback
         } catch (Exception e){
 		
         }
-        /*if(secpic==true){
-			mCamera.notify();
+        if(secpic==true){
+			//mCamera.notify();
 			secpic=false;
-		}*/
+			mCamera.takePicture(null, null, mPicture);
+		}
         
     }
 

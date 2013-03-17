@@ -36,6 +36,8 @@ private SurfaceHolder mHolder;
 public byte[] basePicF, basePicB;
 public static final int MEDIA_TYPE_IMAGE = 1;
 private SensorManager mSensorManager;
+private List<Sensor> msensorList;
+private boolean senspause = false;
 public boolean sensorsInitilized = false;
 public boolean sensdet = false;
 public float[] xacel = new float[5];
@@ -176,10 +178,18 @@ final PictureCallback mPicture = new PictureCallback() {
 	        }
     	}
         //holdpic=false;
-        if(multicam==true){
-    		//swapcam();
+        if(secpic==true){
+    		swapcam();
     		//mCamera.takePicture(null, null, mPicture);
     	
+    	}else{
+    		if(sensorsInitilized==false){
+				sensorsInitilized=true;
+				sensorinit();
+			}
+    		if((senspause==true)&&(sensorsInitilized==true)){
+    			senspause = false;
+    		}
     	}
 
       }
@@ -216,10 +226,10 @@ private void camerainit(){//must finish before starting sensorinit
 					Log.d(TAG, "buttonpress");
 					initpic=true;
 					takepic();
-					if(sensorsInitilized==false){
+					/*if(sensorsInitilized==false){
 						sensorsInitilized=true;
 						sensorinit();
-					}
+					}*/
 					//mCamera.takePicture(null, null, mPicture);
 					
 					/*if(multicam==true){
@@ -234,7 +244,7 @@ private void camerainit(){//must finish before starting sensorinit
 private void sensorinit(){
     // Get the SensorManager 
     mSensorManager= (SensorManager) getSystemService(SENSOR_SERVICE);
-    List<Sensor> msensorList = mSensorManager.getSensorList(Sensor.TYPE_ALL);
+    msensorList = mSensorManager.getSensorList(Sensor.TYPE_ALL);
     String SensListName = new String("");
     String SensListType = new String("");
     Sensor tmp;
@@ -243,8 +253,8 @@ private void sensorinit(){
     	tmp = msensorList.get(i);
     	SensListName = " "+SensListName+tmp.getName(); // Add the sensor name to the string of sensors available
 		mSensorManager.registerListener(this, mSensorManager.getDefaultSensor(tmp.getType()),SensorManager.SENSOR_DELAY_UI);
-
     }
+    
     
     xCoor=(TextView)findViewById(R.id.xcoor); // create X axis object
 	yCoor=(TextView)findViewById(R.id.ycoor); // create Y axis object
@@ -262,6 +272,8 @@ private void sensorinit(){
 	startRecording();
 }
 
+
+
 /** A safe way to get an instance of the Camera object. */
 public static Camera getCameraInstance(int cn){
     Camera c = null;
@@ -275,7 +287,7 @@ public static Camera getCameraInstance(int cn){
 }
 
 private void setcamprev(){//call this when switching cameras
-    mPreview = new CameraPreview(this, mCamera, secpic);
+    mPreview = new CameraPreview(this, mCamera, secpic, mPicture);
     //FrameLayout preview = (FrameLayout) findViewById(R.id.camera_preview);
     preview.addView(mPreview);
     //mHolder = mPreview.getHolder();
@@ -444,109 +456,114 @@ public float CDF1O4(float[] a){
 
 
 public void onSensorChanged(SensorEvent event) {
-	if(event.sensor.getType()==Sensor.TYPE_ACCELEROMETER){
-		//shift old values
-		shifta(xacel);
-		shifta(yacel);
-		shifta(zacel);
-		//assign values
-		xacel[0]=event.values[0];
-		yacel[0]=event.values[1];
-		zacel[0]=event.values[2];
-		//find derivative
-		float dx = CDF1O4(xacel);
-		float dy = CDF1O4(yacel);
-		float dz = CDF1O4(zacel);
-		//change display
-		xCoor.setText("X: "+dx);
-		yCoor.setText("Y: "+dy);
-		zCoor.setText("Z: "+dz);
-		
-		
-		if((dx > vibrationfactor)||(dy > vibrationfactor)||(dz > vibrationfactor)){
-			Log.d(TAG, "vibration1");
-			sensdet = true;
-			takepic();
+	if(senspause == false){
+		if((event.sensor.getType()==Sensor.TYPE_ACCELEROMETER)&&(accele==true)){
+			//shift old values
+			shifta(xacel);
+			shifta(yacel);
+			shifta(zacel);
+			//assign values
+			xacel[0]=event.values[0];
+			yacel[0]=event.values[1];
+			zacel[0]=event.values[2];
+			//find derivative
+			float dx = CDF1O4(xacel);
+			float dy = CDF1O4(yacel);
+			float dz = CDF1O4(zacel);
+			//change display
+			xCoor.setText("X: "+dx);
+			yCoor.setText("Y: "+dy);
+			zCoor.setText("Z: "+dz);
+			
+			
+			if((dx > vibrationfactor)||(dy > vibrationfactor)||(dz > vibrationfactor)){
+				Log.d(TAG, "vibration1");
+				sensdet = true;
+				senspause = true;
+				takepic();
+			}
+			
 		}
-		
-	}
-	if(event.sensor.getType()==Sensor.TYPE_LIGHT){
-		
-		shifta(llevel);
-		llevel[0]=event.values[0];
-		float dl = CDF1O4(llevel);
-		lightLev.setText("L: "+dl);
-		
-		//if(dl > lightfactor){
-		if(llevel[0] > lightfactor){
-			Log.d(TAG, "light1");
-			sensdet = true;
-			takepic();
+		if((event.sensor.getType()==Sensor.TYPE_LIGHT)&&(lighte==true)){
+			
+			shifta(llevel);
+			llevel[0]=event.values[0];
+			float dl = CDF1O4(llevel);
+			lightLev.setText("L: "+dl);
+			
+			//if(dl > lightfactor){
+			if(llevel[0] > lightfactor){
+				Log.d(TAG, "light1");
+				sensdet = true;
+				senspause = true;
+				takepic();
+			}
+			
 		}
-		
-	}
-	if(event.sensor.getType()==Sensor.TYPE_MAGNETIC_FIELD){
-		
-		shifta(mlevel);
-		mlevel[0]=event.values[0];
-		float dm = CDF1O4(mlevel);
-		magLev.setText("M: "+dm);
-		
-		if(dm > magnetfactor){
-		//if(mlevel[0] > magnetfactor){
-			Log.d(TAG, "ferrous2");
-			sensdet = true;
-			takepic();
+		if((event.sensor.getType()==Sensor.TYPE_MAGNETIC_FIELD)&&(magnete==true)){
+			
+			shifta(mlevel);
+			mlevel[0]=event.values[0];
+			float dm = CDF1O4(mlevel);
+			magLev.setText("M: "+dm);
+			
+			if(dm > magnetfactor){
+			//if(mlevel[0] > magnetfactor){
+				Log.d(TAG, "ferrous2");
+				sensdet = true;
+				senspause = true;
+				takepic();
+			}
+			
 		}
-		
-	}
-	if(event.sensor.getType()==Sensor.TYPE_AMBIENT_TEMPERATURE){
-		
-	}
-	if(event.sensor.getType()==Sensor.TYPE_GRAVITY){
-		
-	}
-	if(event.sensor.getType()==Sensor.TYPE_GYROSCOPE){
-		
-	}
-	if(event.sensor.getType()==Sensor.TYPE_LINEAR_ACCELERATION){
-		
-	}
-	if(event.sensor.getType()==Sensor.TYPE_ORIENTATION){
-		
-	}
-	if(event.sensor.getType()==Sensor.TYPE_PRESSURE){
-		
-	}
-	if(event.sensor.getType()==Sensor.TYPE_PROXIMITY){
-		
-	}
-	if(event.sensor.getType()==Sensor.TYPE_RELATIVE_HUMIDITY){
-		
-	}
-	if(event.sensor.getType()==Sensor.TYPE_ROTATION_VECTOR){
-		
-	}
-	if(event.sensor.getType()==Sensor.TYPE_TEMPERATURE){
-		
-	}
-
+		if(event.sensor.getType()==Sensor.TYPE_AMBIENT_TEMPERATURE){
+			
+		}
+		if(event.sensor.getType()==Sensor.TYPE_GRAVITY){
+			
+		}
+		if(event.sensor.getType()==Sensor.TYPE_GYROSCOPE){
+			
+		}
+		if(event.sensor.getType()==Sensor.TYPE_LINEAR_ACCELERATION){
+			
+		}
+		if(event.sensor.getType()==Sensor.TYPE_ORIENTATION){
+			
+		}
+		if(event.sensor.getType()==Sensor.TYPE_PRESSURE){
+			
+		}
+		if(event.sensor.getType()==Sensor.TYPE_PROXIMITY){
+			
+		}
+		if(event.sensor.getType()==Sensor.TYPE_RELATIVE_HUMIDITY){
+			
+		}
+		if(event.sensor.getType()==Sensor.TYPE_ROTATION_VECTOR){
+			
+		}
+		if(event.sensor.getType()==Sensor.TYPE_TEMPERATURE){
+			
+		}
 	
-	//is sound enabled
-	if(sounde==true){
-		shifta(spresure);
-		spresure[0]=mRecorder.getMaxAmplitude();
-		float ds = CDF1O4(spresure);
 		
-		soundLev.setText("S: "+ds);
-		
-		if(ds > soundfactor){
-			Log.d(TAG, "noise2");
-			sensdet = true;
-			//mCamera.takePicture(null, null, mPicture);
+		//is sound enabled
+		if(sounde==true){
+			shifta(spresure);
+			spresure[0]=mRecorder.getMaxAmplitude();
+			float ds = CDF1O4(spresure);
+			
+			soundLev.setText("S: "+ds);
+			
+			if(ds > soundfactor){
+				Log.d(TAG, "noise2");
+				sensdet = true;
+				senspause = true;
+				takepic();
+			}
 		}
 	}
-	
 }
 
 

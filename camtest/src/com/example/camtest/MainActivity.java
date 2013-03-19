@@ -40,6 +40,7 @@ private List<Sensor> msensorList;
 private boolean senspause = false;
 public boolean sensorsInitilized = false;
 public boolean sensdet = false;
+//raw sensor data
 public float[] xacel = new float[5];
 public float[] yacel = new float[5];
 public float[] zacel = new float[5];
@@ -48,15 +49,20 @@ public float[] llevel = new float[5];
 public float[] mlevel = new float[5];
 //how sensitive do you want detection, smaller number is more sensitive
 public static final int vibrationfactor=20,soundfactor=100000,lightfactor=20,magnetfactor=20;
+//how likely something is happening, higher is more likely
+public int priority=0;
+public boolean soundpri=false, accelpri=false, lightpri=false, magnetpri=false;
 TextView xCoor,yCoor,zCoor,soundLev,lightLev,magLev;
 FrameLayout preview;
 private static final String TAG = "MyCameraMain";
 private MediaRecorder mRecorder = null;
 //enable sensors
 public boolean sounde=true, accele=true, lighte=true, magnete=true;
+//controll variables
 public boolean initpic=false, diffpic=true, multicam=false, secpic=false;
 public int currcam=0;
 private ConditionVariable picLock = new ConditionVariable();
+
 
 @Override
 public void onCreate(Bundle savedInstanceState) {
@@ -178,11 +184,14 @@ final PictureCallback mPicture = new PictureCallback() {
 	        }
     	}
         //holdpic=false;
-        if(secpic==true){
+        if(secpic==true){//if dual cameras and second picture not taken get ready to take second picture
     		swapcam();
     		//mCamera.takePicture(null, null, mPicture);
     	
-    	}else{
+    	}else{//done taking pictures for now
+    		if(initpic==true){
+        		initpic=false;
+    		}
     		if(sensorsInitilized==false){
 				sensorsInitilized=true;
 				sensorinit();
@@ -190,6 +199,7 @@ final PictureCallback mPicture = new PictureCallback() {
     		if((senspause==true)&&(sensorsInitilized==true)){
     			senspause = false;
     		}
+    		resetPriority();
     	}
 
       }
@@ -376,7 +386,13 @@ private void releaseCamera(){
     }
 }
 
-
+private void resetPriority(){//this should probably also tell the server what the priority is before reset
+	priority=0;
+	soundpri=false;
+	accelpri=false;
+	lightpri=false;
+	magnetpri=false;
+}
 
 /** Create a File for saving an image or video */
 private  File getOutputMediaFile(int type){
@@ -400,19 +416,20 @@ private  File getOutputMediaFile(int type){
     String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss.SSS").format(new Date());
     File mediaFile;
     String tmpSide = "REAR_";
+    String tmpPri = Integer.toString(priority);
     if (currcam==1){
     	tmpSide = "FRONT_";
     }
     if (type == MEDIA_TYPE_IMAGE){
     	//check if this needs to be initial image
     	if(initpic==true){
-    		initpic=false;
-    		mediaFile = new File(mediaStorageDir.getPath() + File.separator + tmpSide + "INIT_IMG_"+ timeStamp + ".jpg");
+    		//initpic=false;
+    		mediaFile = new File(mediaStorageDir.getPath() + File.separator + tmpSide + "INIT_IMG_"+ timeStamp + "_Priority_" + tmpPri + ".jpg");
     		Log.d(TAG, "initpic");
     		//this.notify();
     	}
     	else{
-    		mediaFile = new File(mediaStorageDir.getPath() + File.separator + tmpSide + "IMG_"+ timeStamp + ".jpg");
+    		mediaFile = new File(mediaStorageDir.getPath() + File.separator + tmpSide + "IMG_"+ timeStamp + "_Priority_" + tmpPri + ".jpg");
     	}
     }
     else {
@@ -434,6 +451,7 @@ public void onAccuracyChanged(Sensor arg0, int arg1) {
 
 public void checkImage(byte[] base, byte[] current){
 	// TODO algo to compare byte arrays and set diffpic to false if they are the same
+	// if images are different add priority
 	return;
 }
 
@@ -456,7 +474,7 @@ public float CDF1O4(float[] a){
 
 
 public void onSensorChanged(SensorEvent event) {
-	if(senspause == false){
+	//if(senspause == false){
 		if((event.sensor.getType()==Sensor.TYPE_ACCELEROMETER)&&(accele==true)){
 			//shift old values
 			shifta(xacel);
@@ -478,9 +496,17 @@ public void onSensorChanged(SensorEvent event) {
 			
 			if((dx > vibrationfactor)||(dy > vibrationfactor)||(dz > vibrationfactor)){
 				Log.d(TAG, "vibration1");
+				priority+=1;
+				if(accelpri==false){
+					accelpri=true;
+					priority+=10;
+				}
 				sensdet = true;
+				if(senspause == false){
+					takepic();
+				}
 				senspause = true;
-				takepic();
+				
 			}
 			
 		}
@@ -494,9 +520,16 @@ public void onSensorChanged(SensorEvent event) {
 			//if(dl > lightfactor){
 			if(llevel[0] > lightfactor){
 				Log.d(TAG, "light1");
+				priority+=1;
+				if(lightpri==false){
+					lightpri=true;
+					priority+=10;
+				}
 				sensdet = true;
+				if(senspause == false){
+					takepic();
+				}
 				senspause = true;
-				takepic();
 			}
 			
 		}
@@ -510,9 +543,16 @@ public void onSensorChanged(SensorEvent event) {
 			if(dm > magnetfactor){
 			//if(mlevel[0] > magnetfactor){
 				Log.d(TAG, "ferrous2");
+				priority+=1;
+				if(magnetpri==false){
+					magnetpri=true;
+					priority+=10;
+				}
 				sensdet = true;
+				if(senspause == false){
+					takepic();
+				}
 				senspause = true;
-				takepic();
 			}
 			
 		}
@@ -558,12 +598,19 @@ public void onSensorChanged(SensorEvent event) {
 			
 			if(ds > soundfactor){
 				Log.d(TAG, "noise2");
+				priority+=1;
+				if(soundpri==false){
+					soundpri=true;
+					priority+=10;
+				}
 				sensdet = true;
+				if(senspause == false){
+					takepic();
+				}
 				senspause = true;
-				takepic();
 			}
 		}
-	}
+	//}
 }
 
 

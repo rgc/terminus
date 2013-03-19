@@ -1,0 +1,89 @@
+package akkaserver;
+
+import java.net.*;
+import java.io.*;
+
+import eventserver.IEventCallbacks;
+
+import shared.ITerminusServer;
+import shared.ServerCloseException;
+
+import com.typesafe.config.ConfigFactory;
+
+import akka.actor.ActorSystem;
+import akka.actor.Actor;
+import akka.actor.Props;
+import akka.actor.ActorRef;
+
+public class AkkaServer implements ITerminusServer
+{
+	private int acceptPort;
+	private ServerSocket server = null;
+	private IEventCallbacks callback;
+
+	public AkkaServer(IEventCallbacks c, int port)
+	{
+		this.callback = c;
+		this.acceptPort = port;
+	}
+
+	@Override
+	public void start() throws ServerCloseException
+	{
+		if (this.server != null && !this.server.isClosed())
+		{
+			stop();
+		}
+
+		try
+		{
+			server = new ServerSocket(this.acceptPort);
+		}
+		catch (IOException e)
+		{
+			throw new ServerCloseException(e.getMessage());
+		}
+
+		/* Connection Accept Thread */
+		new Thread(new Runnable()
+		{
+			@Override
+			public void run()
+			{
+				while (true)
+				{
+					Socket s = null;
+
+					try
+					{
+						s = server.accept();
+						AkkaConnection llc = new AkkaConnection(s,
+								AkkaServer.this.callback);
+						llc.setAddress(s.getInetAddress());
+						llc.setPort(s.getPort());
+						AkkaServer.this.callback.connectionAdded(llc);
+					}
+					catch (IOException e)
+					{
+						// TODO: This should propegate back to UI, or just be
+						// ignored
+						return;
+					}
+				}
+			}
+		}).start();
+	}
+
+	@Override
+	public void stop()
+	{
+		try
+		{
+			server.close();
+		}
+		catch (IOException e)
+		{
+			// Just supress this, we're shutting down anyways.
+		}
+	}
+}

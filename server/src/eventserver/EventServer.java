@@ -12,6 +12,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ConcurrentHashMap;
 
 import lowlevelserver.LowLevelServer;
+import akkaserver.AkkaServer;
 import shared.ATerminusConnection;
 import shared.ITerminusServer;
 import shared.ServerCloseException;
@@ -75,6 +76,7 @@ public class EventServer implements IEventCallbacks, ITerminusServer
 		eventQueue = new ConcurrentLinkedQueue<QueuedMessage>();
 		sessions = new ConcurrentHashMap<String, ATerminusConnection>();
 		eventCom = new LowLevelServer(this, EVENT_PORT);
+		//eventCom = new AkkaServer(this, EVENT_PORT);
 		messageFactory = new LowLevelMessageFactory();
 	}
 

@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<classpath>
+	<classpathentry kind="src" path="camtest/gen"/>
+	<classpathentry kind="src" path="camtest/src"/>
+	<classpathentry kind="src" path="client/src"/>
+	<classpathentry kind="src" path="lib/src"/>
+	<classpathentry kind="src" path="server/src"/>
+	<classpathentry kind="lib" path="camtest/bin/dexedLibs/android-support-v4-1394b586c121e9cd2c3ee40bc3c41b6f.jar"/>
+	<classpathentry kind="lib" path="camtest/libs/android-support-v4.jar"/>
+	<classpathentry kind="lib" path="client/libs/android-support-v4.jar"/>
+	<classpathentry kind="lib" path="client/libs/TerminusNetworkLib.jar"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
+	<classpathentry kind="output" path="camtest/bin/classes"/>
+</classpath>

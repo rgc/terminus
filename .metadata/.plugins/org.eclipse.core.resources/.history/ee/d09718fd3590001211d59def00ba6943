@@ -1,0 +1,38 @@
+package akkaserver;
+
+import eventserver.IEventCallbacks;
+import edu.buffalo.cse.terminus.messages.*;
+
+import shared.ATerminusConnection;
+
+import akka.actor.ActorRef;
+
+
+public class AkkaConnection extends ATerminusConnection
+{
+	private ActorRef serverActor;
+	private ActorRef clientActor;
+	private IEventCallbacks eventClient;
+
+	public AkkaConnection(ActorRef serverActor, ActorRef clientActor, IEventCallbacks client)
+	{
+		super();
+		this.serverActor = serverActor;
+		this.clientActor = clientActor;
+		this.eventClient = client;
+		return;
+	}
+
+	@Override
+	public void sendMessage(TerminusMessage m)
+	{
+		this.clientActor.tell(m, this.serverActor);
+		return;
+	}
+
+	@Override
+	public void shutdown()
+	{
+		return;
+	}
+}

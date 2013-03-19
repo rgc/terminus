@@ -1,0 +1,76 @@
+package akkaserver;
+
+import java.io.*;
+import java.net.*;
+
+import eventserver.IEventCallbacks;
+import edu.buffalo.cse.terminus.messages.*;
+import edu.buffalo.cse.terminus.lowlevel.*;
+
+import shared.ATerminusConnection;
+
+import akka.actor.ActorSystem;
+import akka.actor.Actor;
+import akka.actor.Props;
+import akka.actor.ActorRef;
+
+
+public class AkkaConnection extends ATerminusConnection
+{
+	private Socket socket;
+	private DataOutputStream out;
+	private IEventCallbacks eventClient;
+
+	public AkkaConnection(Socket s, IEventCallbacks client)
+	{
+		super();
+		this.socket = s;
+		this.eventClient = client;
+
+		try
+		{
+			this.out = new DataOutputStream(s.getOutputStream());
+			startReceiveThread();
+		}
+		catch (IOException e)
+		{
+			return;
+		}
+	}
+
+	private void startReceiveThread()
+	{
+
+	}
+
+	@Override
+	public void sendMessage(TerminusMessage m)
+	{
+		try
+		{
+	//		IAkkaMessage llm = (IAkkaMessage) m;
+	//		byte[] msg = llm.getBytes();
+	//		if (msg != null)
+	//		{
+	//			out.write(msg);
+	//		}
+		}
+		catch (IOException e)
+		{
+			// TODO: Handle error
+		}
+	}
+
+	@Override
+	public void shutdown()
+	{
+		try
+		{
+	//		this.socket.close();
+		}
+		catch (IOException e)
+		{
+			// Ignore
+		}
+	}
+}

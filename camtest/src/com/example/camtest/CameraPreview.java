@@ -20,11 +20,6 @@ public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback
         mCamera = camera;
         secpic=pictwo;
         mPicture=Picture;
-        /*SurfaceView view = new SurfaceView(this);
-        c.setPreviewDisplay(view.getHolder());
-        c.startPreview();
-        c.takePicture(shutterCallback, rawPictureCallback, jpegPictureCallback);
-         * */
 
         // Install a SurfaceHolder.Callback so we get notified when the
         // underlying surface is created and destroyed.
@@ -64,8 +59,7 @@ public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback
         } catch (Exception e){
 		
         }
-        if(secpic==true){
-			//mCamera.notify();
+        if(secpic==true){//check if you need to take a second picture
 			secpic=false;
 			mCamera.takePicture(null, null, mPicture);
 		}

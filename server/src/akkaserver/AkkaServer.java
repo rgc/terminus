@@ -4,7 +4,7 @@ import akkaserver.AkkaServerListener;
 
 import java.net.*;
 
-import eventserver.IEventCallbacks;
+import eventserver.ITerminusMsgCallback;
 
 import shared.ITerminusServer;
 import shared.ServerCloseException;
@@ -19,11 +19,11 @@ public class AkkaServer implements ITerminusServer
 {
 	private int acceptPort;
 	private ServerSocket server = null;
-	private IEventCallbacks callback;
+	private ITerminusMsgCallback callback;
 	
 	final ActorSystem system;
 	
-	public AkkaServer(IEventCallbacks c, int port)
+	public AkkaServer(ITerminusMsgCallback c, int port)
 	{
 		system = ActorSystem.create("TerminusServer", ConfigFactory.load().getConfig("TerminusServer"));
 		

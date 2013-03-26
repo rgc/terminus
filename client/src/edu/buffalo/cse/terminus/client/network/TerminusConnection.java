@@ -1,15 +1,19 @@
 package edu.buffalo.cse.terminus.client.network;
 
+import java.io.IOException;
+import java.net.SocketTimeoutException;
+import java.net.UnknownHostException;
+
 import android.app.Activity;
 import android.content.Context;
 import android.telephony.TelephonyManager;
 import edu.buffalo.cse.terminus.client.network.ATerminusClient;
-import edu.buffalo.cse.terminus.client.network.ConnectionResult.ConnectionStatus;
 import edu.buffalo.cse.terminus.messages.EventMessage;
 import edu.buffalo.cse.terminus.messages.ITerminusMessageFactory;
 import edu.buffalo.cse.terminus.messages.RegisterMessage;
 import edu.buffalo.cse.terminus.messages.RegistrationResponse;
 import edu.buffalo.cse.terminus.messages.TerminusMessage;
+import edu.buffalo.cse.terminus.messages.UnregisterMessage;
 import edu.buffalo.cse.terminus.client.network.lowlevel.LowLevelClient;
 import edu.buffalo.cse.terminus.lowlevel.LowLevelMessageFactory;
 import edu.buffalo.cse.terminus.messages.TestMessage;
@@ -37,6 +41,8 @@ public class TerminusConnection implements INetworkCallbacks
 	private INetworkCallbacks callbacks;
 	private ConnectionState curConnectionState;
 	private RegistrationState curRegistrationState;
+	private String eventIPAddress;
+	private int eventPort;
 	
 	public TerminusConnection(INetworkCallbacks c, Activity a) 
 	{
@@ -55,8 +61,11 @@ public class TerminusConnection implements INetworkCallbacks
 		this.uid = mgr.getDeviceId();
 	}
 	
-	public void connect(final String host, final int port)
+	public void connect(String host, int port)
 	{
+		this.eventIPAddress = host;
+		this.eventPort = port;
+		
 		if (curConnectionState != ConnectionState.Disconnected)
 			return;
 		
@@ -95,67 +104,158 @@ public class TerminusConnection implements INetworkCallbacks
 		}
 	}
 	
+	/*
+	 * Disconnect from the Event Server
+	 */
 	public void disconnect()
 	{
+		if (this.curRegistrationState == RegistrationState.Registered && 
+				this.curConnectionState == ConnectionState.Connected)
+		{
+			//TODO: Will the send thread run before the disconnect thread?
+			//		We may want to queue the messages and disconnect after flushing the queue.
+			UnregisterMessage urm = this.messageFactory.getUnregisterMessage(this.uid);
+			terminusClient.sendMessage(urm);
+			terminusClient.disconnect();
+		}
+		
 		this.curRegistrationState = RegistrationState.Unregistered;
 		this.curConnectionState = ConnectionState.Disconnected;
-		terminusClient.disconnect();
 	}
 	
 	public String getConnectionID()
 	{
 		return this.uid;
 	}
+	
+	@Override
+	public void onConnectionComplete() 
+	{
+		startRegistrationProtocol();
+		
+		if (callbacks != null)
+			callbacks.onConnectionComplete();
+	}
 
 	@Override
-	public void connectionFinished(ConnectionResult result) 
+	public void onConnectionError(IOException e) 
 	{
-		if (result.status == ConnectionStatus.Success)
+		if (callbacks != null)
+			callbacks.onConnectionError(e);
+	}
+
+	@Override
+	public void onConnectionError(SocketTimeoutException e) 
+	{
+		if (callbacks != null)
+			callbacks.onConnectionError(e);	
+	}
+
+	@Override
+	public void onConnectionError(UnknownHostException e) 
+	{
+		if (callbacks != null)
+			callbacks.onConnectionError(e);
+	}
+
+	@Override
+	public void onDisconnectComplete() 
+	{
+		if (callbacks != null)
+			callbacks.onDisconnectComplete();	
+	}
+
+	@Override
+	public void onConnectionDropped() 
+	{
+		//TODO Reconnect!
+		if (callbacks != null)
+			callbacks.onConnectionDropped();
+	}
+
+	@Override
+	public void onMessageReceived(TerminusMessage msg) 
+	{
+		if (msg == null)
+			return;
+		
+		switch (msg.getMessageType())
 		{
-			// Registration Protocol 
-			curConnectionState = ConnectionState.Connected;
-			curRegistrationState = RegistrationState.Pending;
-			RegisterMessage rm = this.messageFactory.getRegisterMessage(this.uid);
-			this.terminusClient.sendMessage(rm);
+			case TerminusMessage.MSG_REG_RESPONSE:
+				regResponseReceived((RegistrationResponse) msg);
+				break;
+				
+			case TerminusMessage.MSG_UNREGISTER:
+				unregisterReceived((UnregisterMessage) msg);
+				break;
+				
+			default:
+				break;
 		}
 		
 		if (callbacks != null)
-			callbacks.connectionFinished(result);
+			callbacks.onMessageReceived(msg);
 	}
 
 	@Override
-	public void messageFinished(ConnectionResult result) 
+	public void onSendComplete() 
 	{
 		if (callbacks != null)
-			callbacks.messageFinished(result);
+			callbacks.onSendComplete();
 	}
 
 	@Override
-	public void disconnectFinished(ConnectionResult result) 
+	public void onMessageFailed(TerminusMessage msg) 
 	{
+		//TODO Queue and try again!
+		
 		if (callbacks != null)
-			callbacks.disconnectFinished(result);
+			callbacks.onMessageFailed(msg);
 	}
-
-	@Override
-	public void messageReceived(TerminusMessage msg) 
+	
+	////////////////////////   REGISTRATION PROTOCOL   ////////////////////////
+	
+	private void startRegistrationProtocol()
 	{
-		if (msg.getMessageType() == TerminusMessage.MSG_REG_RESPONSE && 
-				curRegistrationState == RegistrationState.Pending)
+		curConnectionState = ConnectionState.Connected;
+		curRegistrationState = RegistrationState.Pending;
+		RegisterMessage rm = this.messageFactory.getRegisterMessage(this.uid);
+		this.terminusClient.sendMessage(rm);
+	}
+	
+	private void regResponseReceived(RegistrationResponse msg)
+	{
+		if (curRegistrationState == RegistrationState.Pending)
 		{
-			RegistrationResponse res = (RegistrationResponse) msg;
-			if (res.getResult() == RegistrationResponse.REGISTRATION_SUCCESS)
+			if (msg.getResult() == RegistrationResponse.REGISTRATION_SUCCESS)
 			{
 				curRegistrationState = RegistrationState.Registered;
 			}
 			else
 			{
 				curRegistrationState = RegistrationState.Unregistered;
-				//TODO: Registration failed, what now?
+				reconnectAndRegister();
 			}
 		}
+	}
+	
+	private void unregisterReceived(UnregisterMessage msg)
+	{
+		//The indirection is in case we need to actually do
+		//anything with the message in the future.
+		reconnectAndRegister();
+	}
+	
+	private void reconnectAndRegister()
+	{
+		/*
+		 * The event server doesn't know us and so we need to 
+		 * reconnect and start the registration protocol again
+		 */
 		
-		if (callbacks != null)
-			callbacks.messageReceived(msg);
+		this.terminusClient.disconnect();
+		this.curConnectionState = ConnectionState.Disconnected;
+		this.curRegistrationState = RegistrationState.Unregistered;
+		this.connect(this.eventIPAddress, this.eventPort);
 	}
 }

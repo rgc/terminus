@@ -3,7 +3,7 @@ package lowlevelserver;
 import java.io.*;
 import java.net.*;
 
-import eventserver.IEventCallbacks;
+import eventserver.ITerminusMsgCallback;
 import edu.buffalo.cse.terminus.messages.*;
 import edu.buffalo.cse.terminus.lowlevel.*;
 
@@ -13,9 +13,9 @@ public class LowLevelConnection extends ATerminusConnection
 {
 	private Socket socket;
 	private DataOutputStream out;
-	private IEventCallbacks eventClient;
+	private ITerminusMsgCallback eventClient;
 
-	public LowLevelConnection(Socket s, IEventCallbacks client)
+	public LowLevelConnection(Socket s, ITerminusMsgCallback client)
 	{
 		super();
 		this.socket = s;
@@ -48,8 +48,6 @@ public class LowLevelConnection extends ATerminusConnection
 				catch (IOException e1)
 				{
 					LowLevelConnection.this.shutdown();
-					LowLevelConnection.this.eventClient
-							.connectionDropped(LowLevelConnection.this);
 					return;
 				}
 				
@@ -64,8 +62,6 @@ public class LowLevelConnection extends ATerminusConnection
 					catch (IOException e)
 					{
 						LowLevelConnection.this.shutdown();
-						LowLevelConnection.this.eventClient
-								.connectionDropped(LowLevelConnection.this);
 						return;
 					}
 				}

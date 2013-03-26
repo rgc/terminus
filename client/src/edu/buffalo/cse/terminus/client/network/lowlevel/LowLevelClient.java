@@ -6,8 +6,6 @@ import java.net.*;
 import java.nio.ByteBuffer;
 
 import edu.buffalo.cse.terminus.client.network.ATerminusClient;
-import edu.buffalo.cse.terminus.client.network.ConnectionResult;
-import edu.buffalo.cse.terminus.client.network.ConnectionResult.ConnectionStatus;
 import edu.buffalo.cse.terminus.lowlevel.ILowLevelMessage;
 import edu.buffalo.cse.terminus.lowlevel.LowLevelReader;
 
@@ -19,14 +17,36 @@ public class LowLevelClient extends ATerminusClient
 	private static final int TIMEOUT = 5000;
 	private static boolean TEST_DUPLICATE_MESSAGES = false;
 	
+	private String eventIPAddress;
+	private int eventPort;
+	
 	public LowLevelClient()
 	{
 		socket = new Socket();
 	}
-
-	@Override
-	public void connect(final String host, final int port)
+	
+	private void dropConnection()
 	{
+		try 
+		{
+			socket.close();
+		}
+		catch (IOException e)
+		{
+		}
+		
+		if (this.callback != null)
+		{
+			this.callback.onConnectionDropped();	
+		}
+	}
+	
+	@Override
+	public void connect(String host, int port)
+	{
+		eventIPAddress = host;
+		eventPort = port;
+		
 		/* Create a generic socket so we can connect with a timeout value */
 		socket = new Socket();
 		
@@ -35,10 +55,10 @@ public class LowLevelClient extends ATerminusClient
 			@Override
 			public void run()
 			{
-				ConnectionResult result = null;
 				try
 				{
-					SocketAddress address = new InetSocketAddress(host, port);
+					SocketAddress address = new InetSocketAddress(LowLevelClient.this.eventIPAddress, 
+							LowLevelClient.this.eventPort);
 					socket.connect(address, TIMEOUT);
 					
 					/*
@@ -55,8 +75,9 @@ public class LowLevelClient extends ATerminusClient
 							try {
 								reader = new LowLevelReader(LowLevelClient.this.socket);
 							} 
-							catch (IOException e) {
-								// TODO: Handle this!
+							catch (IOException e) 
+							{
+								LowLevelClient.this.dropConnection();
 								return;
 							}
 							
@@ -65,40 +86,39 @@ public class LowLevelClient extends ATerminusClient
 								try 
 								{
 									TerminusMessage message = reader.getNextMessage();
+									
 									if (LowLevelClient.this.callback != null)
-									{
-										LowLevelClient.this.callback.messageReceived(message);
-									}
+										LowLevelClient.this.callback.onMessageReceived(message);
 								} 
 								catch (IOException e) 
 								{
-									//TODO: Handle this!
+									LowLevelClient.this.dropConnection();
 									return;
 								}
 							}	
 						}
 					}).start();
 					
-					result = new ConnectionResult(ConnectionStatus.Success, null);
+					if (callback != null)
+						callback.onConnectionComplete();
 				}
 				catch (UnknownHostException e)
 				{
-					result = new ConnectionResult(ConnectionStatus.UnknownHost, e);
+					if (LowLevelClient.this.callback != null)
+						LowLevelClient.this.callback.onConnectionError(e);
 				}
 				catch (SocketTimeoutException e)
 				{
-					result = new ConnectionResult(ConnectionStatus.TimeOut, e);
+					if (LowLevelClient.this.callback != null)
+						LowLevelClient.this.callback.onConnectionError(e);
 				}
 				catch (IOException e)
 				{
-					result = new ConnectionResult(ConnectionStatus.IOError, e);
+					if (LowLevelClient.this.callback != null)
+						LowLevelClient.this.callback.onConnectionError(e);
 				}
-				
-				if (callback != null)
-					callback.connectionFinished(result);
 			}
 		}).start();
-
 	}
 	
 	@Override
@@ -109,20 +129,16 @@ public class LowLevelClient extends ATerminusClient
 			@Override
 			public void run()
 			{
-				ConnectionResult result = null;
-				
 				try
 				{
 					socket.close();
-					result = new ConnectionResult(ConnectionStatus.Success, null);
 				}
 				catch (IOException e)
 				{
-					result = new ConnectionResult(ConnectionStatus.IOError, e);
 				}
 				
 				if (callback != null)
-					callback.disconnectFinished(result);
+					callback.onDisconnectComplete();
 			}
 		}).start();
 	}
@@ -130,13 +146,15 @@ public class LowLevelClient extends ATerminusClient
 	@Override
 	public void sendMessage(final TerminusMessage m)
 	{
+		if (this.socket == null)
+			return;
+		
 		new Thread(new Runnable()
 		{
 			@Override
 			public void run()
 			{
 				DataOutputStream out;
-				ConnectionResult result;
 				
 				try
 				{
@@ -157,16 +175,15 @@ public class LowLevelClient extends ATerminusClient
 					{
 						out.write(b);
 					}
-					result = new ConnectionResult(ConnectionStatus.Success, null);
+					
+					if (callback != null)
+						callback.onSendComplete();
 				}
 				catch (IOException e)
 				{
-					result = new ConnectionResult(ConnectionStatus.IOError, e);
+					if (callback != null)
+						callback.onMessageFailed(m);
 				}
-				
-				if (callback != null)
-					callback.messageFinished(result);
-				
 			}
 		}).start();
 	}

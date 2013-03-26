@@ -1,9 +1,11 @@
 package edu.buffalo.cse.terminus.client;
 
+import java.io.IOException;
+import java.net.SocketTimeoutException;
+import java.net.UnknownHostException;
+
 import android.app.Activity;
 
-
-import edu.buffalo.cse.terminus.client.network.ConnectionResult;
 import edu.buffalo.cse.terminus.client.network.INetworkCallbacks;
 import edu.buffalo.cse.terminus.messages.TerminusMessage;
 
@@ -24,49 +26,103 @@ public class UIEventBridge implements INetworkCallbacks
 		this.caller = caller;
 		this.activity = activity;
 	}
-	
+
 	@Override
-	public void connectionFinished(final ConnectionResult result)
+	public void onConnectionComplete() 
 	{
 		this.activity.runOnUiThread(new Runnable() {
 			@Override
 			public void run() { 
-				caller.connectionFinished(result); 
+				caller.onConnectionComplete(); 
 			}
 		});
 	}
 
 	@Override
-	public void messageFinished(final ConnectionResult result)
+	public void onConnectionError(final IOException e) 
 	{
 		this.activity.runOnUiThread(new Runnable() {
 			@Override
 			public void run() { 
-				caller.messageFinished(result); 
+				caller.onConnectionError(e); 
 			}
 		});
 	}
 
 	@Override
-	public void disconnectFinished(final ConnectionResult result)
+	public void onConnectionError(final SocketTimeoutException e) 
 	{
 		this.activity.runOnUiThread(new Runnable() {
 			@Override
 			public void run() { 
-				caller.disconnectFinished(result); 
+				caller.onConnectionError(e); 
 			}
-		});
+		});	
 	}
 
 	@Override
-	public void messageReceived(final TerminusMessage msg)
+	public void onConnectionError(final UnknownHostException e) 
 	{
 		this.activity.runOnUiThread(new Runnable() {
 			@Override
 			public void run() { 
-				caller.messageReceived(msg); 
+				caller.onConnectionError(e); 
 			}
-		});
+		});	
 	}
 
+	@Override
+	public void onDisconnectComplete() 
+	{
+		this.activity.runOnUiThread(new Runnable() {
+			@Override
+			public void run() { 
+				caller.onDisconnectComplete(); 
+			}
+		});	
+	}
+
+	@Override
+	public void onConnectionDropped() 
+	{
+		this.activity.runOnUiThread(new Runnable() {
+			@Override
+			public void run() { 
+				caller.onConnectionDropped(); 
+			}
+		});	
+	}
+
+	@Override
+	public void onMessageReceived(final TerminusMessage msg) 
+	{
+		this.activity.runOnUiThread(new Runnable() {
+			@Override
+			public void run() { 
+				caller.onMessageReceived(msg); 
+			}
+		});	
+	}
+
+	@Override
+	public void onSendComplete() 
+	{
+		this.activity.runOnUiThread(new Runnable() {
+			@Override
+			public void run() { 
+				caller.onSendComplete(); 
+			}
+		});	
+	}
+
+	@Override
+	public void onMessageFailed(final TerminusMessage msg) 
+	{
+		this.activity.runOnUiThread(new Runnable() {
+			@Override
+			public void run() { 
+				caller.onMessageFailed(msg); 
+			}
+		});	
+	}
 }

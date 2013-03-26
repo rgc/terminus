@@ -5,19 +5,19 @@ import edu.buffalo.cse.terminus.messages.*;
 import akka.actor.UntypedActor;
 import akka.actor.ActorRef;
 
-import eventserver.IEventCallbacks;
+import eventserver.ITerminusMsgCallback;
 
 public class AkkaServerListener extends UntypedActor {
  
-  private IEventCallbacks callback;
+  private ITerminusMsgCallback callback;
   
   public void onReceive(Object message) throws Exception {
     if(message instanceof String) {
       final String string = (String) message;
       System.out.println("Received String: \""+string+"\"");
       
-    } else if(message instanceof IEventCallbacks) {
-    	this.callback = (IEventCallbacks)message;
+    } else if(message instanceof ITerminusMsgCallback) {
+    	this.callback = (ITerminusMsgCallback)message;
     
     } else if(message instanceof RegisterMessage) {
     	registerClient((RegisterMessage)message, getSender());
@@ -33,7 +33,6 @@ public class AkkaServerListener extends UntypedActor {
   private void registerClient(RegisterMessage message, ActorRef client) {
 
 	  AkkaConnection ac = new AkkaConnection(getSelf(), client);
-	  this.callback.connectionAdded(ac);
 	  
 	  System.out.println("Registration");
 	

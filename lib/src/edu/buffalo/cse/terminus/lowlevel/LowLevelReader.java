@@ -154,6 +154,10 @@ public class LowLevelReader
 				m = new LowLevelRegisterMessage(id);
 				break;
 				
+			case TerminusMessage.MSG_UNREGISTER:
+				m = new LowLevelUnregisterMessage(id);
+				break;
+				
 			case TerminusMessage.MSG_REG_RESPONSE:
 				m = new LowLevelRegResponse(id);
 				break;

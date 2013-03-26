@@ -1,27 +1,48 @@
 package edu.buffalo.cse.terminus.client.network;
 
+import java.io.IOException;
+import java.net.SocketTimeoutException;
+import java.net.UnknownHostException;
+
 import edu.buffalo.cse.terminus.messages.TerminusMessage;
 
 public interface INetworkCallbacks
 {
 	/*
-	 * Called when the connection attempt comletes
+	 * Successful connection attempt
 	 */
-	public void connectionFinished(ConnectionResult result);
+	public void onConnectionComplete();
 	
 	/*
-	 * Called when a the a message send attempt completes
+	 * Connection errors
 	 */
-	public void messageFinished(ConnectionResult result);
+	public void onConnectionError(IOException e);
+	public void onConnectionError(SocketTimeoutException e);
+	public void onConnectionError(UnknownHostException e);
 	
 	/*
 	 * Called when the disconnect attempt completes
 	 */
-	public void disconnectFinished(ConnectionResult result);
+	public void onDisconnectComplete();
+	
+	/*
+	 * Called if the lower layer connection is terminated due to error 
+	 */
+	public void onConnectionDropped();
 	
 	/*
 	 * Called when a message has been received from the connection
 	 */
-	public void messageReceived(TerminusMessage msg);
+	public void onMessageReceived(TerminusMessage msg);
 	
+	/*
+	 * Called when a the a message send attempt successfully completes
+	 */
+	public void onSendComplete();
+	
+	/*
+	 * Called when an error occurs when transmitting a message or the
+	 * message cannot otherwise be sent
+	 */
+	public void onMessageFailed(TerminusMessage msg);
 }

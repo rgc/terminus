@@ -1,5 +1,8 @@
 package edu.buffalo.cse.terminus.client;
 
+import java.io.IOException;
+import java.net.SocketTimeoutException;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 
 import edu.buffalo.cse.terminus.client.R;
@@ -47,6 +50,20 @@ public class SendMessageActivity extends Activity implements INetworkCallbacks
 		terminusConnection.connect(ip, port);
 	}
 	
+	@Override
+	protected void onPause() 
+	{
+		super.onPause();
+		terminusConnection.disconnect();
+	}
+	
+	@Override
+	protected void onStop() 
+	{
+		super.onStop();
+		terminusConnection.disconnect();
+	}
+	
 	private void setActivityControls()
 	{
 		txtMessage = (EditText) this.findViewById(R.id.edit_message);
@@ -76,41 +93,6 @@ public class SendMessageActivity extends Activity implements INetworkCallbacks
 		terminusConnection.sendEventMessage();
 	}
 	
-	//////////////////////   Connection Manager Callbacks   //////////////////////
-	
-	@Override
-	public void connectionFinished(final ConnectionResult result)
-	{
-		hourglass.dismiss();
-		String errText = "";
-		
-		switch (result.status)
-		{
-		case Success:
-			return;
-			
-		case IOError:
-			errText = "Error: " + result.exception.getMessage();
-			break;
-			
-		case TimeOut:
-			errText = "Error: Connection Timed Out";
-			break;
-			
-		case UnknownHost:
-			errText = "Error: Unknown Host";
-			break;
-			
-		default:
-			errText = "*** UNKNOWN RESULT CODE ***";
-			break;
-		}
-		
-		AlertDialog ad = Dialogs.getOKOnlyAlert(errText, this);
-		ad.setOnDismissListener(new CloseActivityDialogListener(this));
-		ad.show();
-	}
-	
 	private class CloseActivityDialogListener implements OnDismissListener
 	{
 		Activity activity;
@@ -126,34 +108,70 @@ public class SendMessageActivity extends Activity implements INetworkCallbacks
 			activity.finish();
 		}
 	}
-	
-	@Override
-	public void messageFinished(final ConnectionResult result)
-	{
-		switch (result.status)
-		{
-		case IOError:
-			Dialogs.getOKOnlyAlert("An error occurred while sending the message", this);
-			break;
-		default:
-			break;
-		}
-	}
-	
-	@Override
-	public void disconnectFinished(ConnectionResult result)
-	{
 
+	//////////////////////   Network Callbacks   //////////////////////
+	
+	@Override
+	public void onConnectionComplete() 
+	{
+		hourglass.dismiss();
 	}
 
 	@Override
-	public void messageReceived(final TerminusMessage msg)
+	public void onConnectionError(IOException e) 
+	{
+		connectionError("Error: " + e.getMessage());
+	}
+
+	@Override
+	public void onConnectionError(SocketTimeoutException e) 
+	{
+		connectionError("Error: Connection Timed Out");
+	}
+
+	@Override
+	public void onConnectionError(UnknownHostException e) 
+	{
+		connectionError("Error: Unknown Host");
+	}
+
+	@Override
+	public void onDisconnectComplete() 
+	{	
+	}
+
+	private void connectionError(String message)
+	{
+		hourglass.dismiss();
+		AlertDialog ad = Dialogs.getOKOnlyAlert(message, this);
+		ad.setOnDismissListener(new CloseActivityDialogListener(this));
+		ad.show();
+	}
+	
+	@Override
+	public void onConnectionDropped() 
+	{	
+	}
+
+	@Override
+	public void onMessageReceived(TerminusMessage msg) 
 	{
 		if (msg.getMessageType() == TerminusMessage.MSG_TEST)
 		{
 			TestMessage tm = (TestMessage) msg;
 			sentMessages.add(tm.message);
 			lvMessages.invalidateViews();
-		}
+		}	
+	}
+
+	@Override
+	public void onSendComplete() 
+	{
+	}
+
+	@Override
+	public void onMessageFailed(TerminusMessage msg) 
+	{	
+		Dialogs.getOKOnlyAlert("An error occurred while sending the message", this);
 	}
 }

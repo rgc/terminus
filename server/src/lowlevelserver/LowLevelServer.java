@@ -3,7 +3,7 @@ package lowlevelserver;
 import java.net.*;
 import java.io.*;
 
-import eventserver.IEventCallbacks;
+import eventserver.ITerminusMsgCallback;
 
 import shared.ITerminusServer;
 import shared.ServerCloseException;
@@ -12,9 +12,9 @@ public class LowLevelServer implements ITerminusServer
 {
 	private int acceptPort;
 	private ServerSocket server = null;
-	private IEventCallbacks callback;
+	private ITerminusMsgCallback callback;
 
-	public LowLevelServer(IEventCallbacks c, int port)
+	public LowLevelServer(ITerminusMsgCallback c, int port)
 	{
 		this.callback = c;
 		this.acceptPort = port;
@@ -54,7 +54,6 @@ public class LowLevelServer implements ITerminusServer
 								LowLevelServer.this.callback);
 						llc.setAddress(s.getInetAddress());
 						llc.setPort(s.getPort());
-						LowLevelServer.this.callback.connectionAdded(llc);
 					}
 					catch (IOException e)
 					{

@@ -7,7 +7,6 @@ import java.net.Socket;
 import java.net.SocketAddress;
 import java.net.SocketTimeoutException;
 import java.net.UnknownHostException;
-import java.util.ArrayList;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -20,12 +19,13 @@ import edu.buffalo.cse.terminus.lowlevel.LowLevelMessageFactory;
 import edu.buffalo.cse.terminus.messages.ITerminusMessageFactory;
 import edu.buffalo.cse.terminus.messages.RegistrationResponse;
 import edu.buffalo.cse.terminus.messages.TerminusMessage;
+import edu.buffalo.cse.terminus.messages.UnregisterMessage;
 
 /*
  * This class handles handles the message processing portion of event handling.
  * Also, this class acts as a bridge to the implementation defined communications portion.
  */
-public class EventServer implements IEventCallbacks, ITerminusServer
+public class EventServer implements ITerminusMsgCallback, ITerminusServer
 {
 	public static final int EVENT_PORT = 34411;
 	public static final int INTERNET_TIMEOUT = 10000;
@@ -49,7 +49,7 @@ public class EventServer implements IEventCallbacks, ITerminusServer
 	private ITerminusMessageFactory messageFactory;
 	
 	/* List of parties interested in events */
-	private final ArrayList<IEventCallbacks> eventClients;
+	private final ITerminusMsgCallback messageCallback;
 	
 	/* 
 	 *  Queued events
@@ -70,32 +70,16 @@ public class EventServer implements IEventCallbacks, ITerminusServer
 	
 	private String eventServerIP;
 	
-	public EventServer()
+	public EventServer(ITerminusMsgCallback msgCallback)
 	{
-		eventClients = new ArrayList<IEventCallbacks>();
+		this.messageCallback = msgCallback;
 		eventQueue = new ConcurrentLinkedQueue<QueuedMessage>();
 		sessions = new ConcurrentHashMap<String, ATerminusConnection>();
 		eventCom = new LowLevelServer(this, EVENT_PORT);
 		//eventCom = new AkkaServer(this, EVENT_PORT);
 		messageFactory = new LowLevelMessageFactory();
 	}
-
-	public void registerForCallbacks(IEventCallbacks t)
-	{
-		if (!eventClients.contains(t))
-		{
-			eventClients.add(t);
-		}
-	}
-
-	public void unregisterForCallbacks(IEventCallbacks t)
-	{
-		if (eventClients.contains(t))
-		{
-			eventClients.remove(t);
-		}
-	}
-
+	
 	/*
 	 * (non-Javadoc)
 	 * 
@@ -154,11 +138,22 @@ public class EventServer implements IEventCallbacks, ITerminusServer
 					if (!eventQueue.isEmpty())
 					{
 						QueuedMessage qm = eventQueue.remove();
-						EventServer.this.processMessage(qm);
-							
-						for (IEventCallbacks t : EventServer.this.eventClients)
+						
+						if (!isRegistered(qm.message.getID()) && qm.message.getMessageType() != TerminusMessage.MSG_REGISTER)
 						{
-							t.messageReceived(qm.connection, qm.message);
+							/*
+							 * No session established for this id.
+							 * We'll send a Unregister message and won't take this message any further 
+							 */
+							UnregisterMessage urm = messageFactory.getUnregisterMessage(qm.message.getID());
+							qm.connection.sendMessage(urm);
+						}
+						
+						EventServer.this.processMessage(qm);
+						
+						if (EventServer.this.messageCallback != null)
+						{
+							EventServer.this.messageCallback.messageReceived(qm.connection, qm.message);
 						}
 					}
 
@@ -175,6 +170,14 @@ public class EventServer implements IEventCallbacks, ITerminusServer
 		}).start();
 	}
 
+	private boolean isRegistered(String id)
+	{
+		if (id == null || id.isEmpty())
+			return false;
+		else
+			return this.sessions.containsKey(id);
+	}
+	
 	private void processMessage(QueuedMessage msg)
 	{
 		if (msg == null)
@@ -193,6 +196,10 @@ public class EventServer implements IEventCallbacks, ITerminusServer
 				registrationRequest(msg);
 				break;
 			
+			case TerminusMessage.MSG_UNREGISTER:
+				unregister(msg);
+				break;
+				
 			case TerminusMessage.MSG_EVENT:
 				processEvent(msg);
 				break;
@@ -215,11 +222,12 @@ public class EventServer implements IEventCallbacks, ITerminusServer
 		String id = msg.message.getID();
 		
 		if (sessions.contains(id))
-		{
 			sessions.remove(id);
-		}
 		
 		sessions.put(id, msg.connection);
+		
+		msg.connection.setID(id);
+		
 		RegistrationResponse response = messageFactory.getRegistrationResponse(id);
 		response.setResult(RegistrationResponse.REGISTRATION_SUCCESS);
 		msg.connection.sendMessage(response);
@@ -228,37 +236,23 @@ public class EventServer implements IEventCallbacks, ITerminusServer
 	private void processEvent(QueuedMessage qm)
 	{
 		//TODO do something with the event!
-		//		Alternatively, just register all handlers 
-		//		for to receive callbacks
+		//		Alternatively, just register all handlers for 
+		//		events to receive callbacks.
+	}
+	
+	private void unregister(QueuedMessage qm)
+	{
+		String id = qm.message.getID();
+		if (isRegistered(id))
+		{
+			sessions.remove(id);
+			qm.connection.shutdown();
+		}
 	}
 	
 	// /////////////////////////// NETWORK EVENTS /////////////////////////////
 
-	/*
-	 * We'll do anything we need to with the events and then broadcast them to
-	 * any other registered clients.
-	 */
-	@Override
-	public synchronized void connectionAdded(ATerminusConnection connection)
-	{
-		/*
-		 * Pass the event on to whoever else needs to know
-		 */
-		for (IEventCallbacks t : this.eventClients)
-		{
-			t.connectionAdded(connection);
-		}
-	}
-
-	@Override
-	public synchronized void connectionDropped(ATerminusConnection connection)
-	{
-		for (IEventCallbacks t : this.eventClients)
-		{
-			t.connectionDropped(connection);
-		}
-	}
-
+	
 	@Override
 	public synchronized void messageReceived(ATerminusConnection connection, TerminusMessage msg)
 	{

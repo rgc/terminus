@@ -1,24 +1,23 @@
 import java.text.SimpleDateFormat;
 
 import eventserver.EventServer;
-import eventserver.IEventCallbacks;
+import eventserver.ITerminusMsgCallback;
 import edu.buffalo.cse.terminus.messages.*;
 
 import shared.ATerminusConnection;
 import shared.ServerCloseException;
 
-public class Terminus implements IEventCallbacks
+public class Terminus implements ITerminusMsgCallback
 {
 	private EventServer tserver;
 	
 	public Terminus(String[] args)
 	{
-		this.tserver = new EventServer();
+		this.tserver = new EventServer(this);
 		
 		/* Start the server(s) */
-		try 
+		try
 		{
-			tserver.registerForCallbacks(this);
 			tserver.start();
 			System.out.println("Welcome to the Terminus Server\n");
 			System.out.println("Local IP Address: " + tserver.getEventServerIP());
@@ -29,20 +28,6 @@ public class Terminus implements IEventCallbacks
 			System.exit(1);
 			return;
 		}
-	}
-
-	@Override
-	public void connectionAdded(ATerminusConnection c)
-	{
-		String id = (c.getID() == null) ? "unknown id" : c.getID();
-		System.out.println("Connection Added:  " + id);
-	}
-	
-	@Override
-	public void connectionDropped(ATerminusConnection c)
-	{
-		String id = (c.getID() == null) ? "unknown id" : c.getID();
-		System.out.println("Connection Dropped: " + id);
 	}
 	
 	@Override
@@ -55,6 +40,10 @@ public class Terminus implements IEventCallbacks
 		{
 		case TerminusMessage.MSG_REGISTER:
 			System.out.println("Registration Message Received.  ID == " + msg.getID());
+			break;
+		
+		case TerminusMessage.MSG_UNREGISTER:
+			System.out.println("Unregistration Message Received.  ID == " + msg.getID());
 			break;
 			
 		case TerminusMessage.MSG_TEST:

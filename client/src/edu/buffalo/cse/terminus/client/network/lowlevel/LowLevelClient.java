@@ -59,7 +59,11 @@ public class LowLevelClient extends ATerminusClient
 				{
 					SocketAddress address = new InetSocketAddress(LowLevelClient.this.eventIPAddress, 
 							LowLevelClient.this.eventPort);
+					
 					socket.connect(address, TIMEOUT);
+					
+					if (callback != null)
+						callback.onConnectionComplete();
 					
 					/*
 					 * Thread dedicated to receiving messages
@@ -98,9 +102,6 @@ public class LowLevelClient extends ATerminusClient
 							}	
 						}
 					}).start();
-					
-					if (callback != null)
-						callback.onConnectionComplete();
 				}
 				catch (UnknownHostException e)
 				{

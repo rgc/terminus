@@ -26,6 +26,7 @@ public class TerminusConnection implements INetworkCallbacks
 	private enum ConnectionState
 	{
 		Disconnected,
+		Disconnecting,
 		Connecting,
 		Connected
 	}
@@ -75,15 +76,18 @@ public class TerminusConnection implements INetworkCallbacks
 	
 	public void sendTestMessage(String message)
 	{
-		if (curConnectionState == ConnectionState.Connected && curRegistrationState == RegistrationState.Registered)
+		if (curConnectionState == ConnectionState.Connected && 
+				curRegistrationState == RegistrationState.Registered)
 		{
 			TestMessage tm = messageFactory.getTestMessage(this.uid);
 			tm.message = message;
-			terminusClient.sendMessage(tm);	
+			terminusClient.sendMessage(tm);
 		}
-		else
+		else if (curConnectionState == ConnectionState.Disconnected || 
+				curRegistrationState == RegistrationState.Unregistered)
 		{
-			//TODO: Queue items, connect
+			
+			this.reconnect();
 		}
 	}
 	
@@ -104,23 +108,45 @@ public class TerminusConnection implements INetworkCallbacks
 		}
 	}
 	
+	public void sendMessage(TerminusMessage m)
+	{
+		terminusClient.sendMessage(m);
+	}
+	
+	public void reconnect()
+	{
+		if (this.eventIPAddress == null || this.eventIPAddress.isEmpty() || 
+				this.eventPort == 0)
+		{
+			// We never connected in the first place
+			return;
+		}
+		
+		this.terminusClient.disconnect();
+		this.curConnectionState = ConnectionState.Disconnected;
+		this.connect(this.eventIPAddress, this.eventPort);
+	}
+	
 	/*
 	 * Disconnect from the Event Server
 	 */
 	public void disconnect()
 	{
-		if (this.curRegistrationState == RegistrationState.Registered && 
-				this.curConnectionState == ConnectionState.Connected)
+		if (this.curConnectionState == ConnectionState.Connected)
 		{
-			//TODO: Will the send thread run before the disconnect thread?
-			//		We may want to queue the messages and disconnect after flushing the queue.
-			UnregisterMessage urm = this.messageFactory.getUnregisterMessage(this.uid);
-			terminusClient.sendMessage(urm);
-			terminusClient.disconnect();
+			if (this.curRegistrationState != RegistrationState.Unregistered)
+			{
+				UnregisterMessage urm = this.messageFactory.getUnregisterMessage(this.uid);
+				this.curRegistrationState = RegistrationState.Unregistered;
+				this.curConnectionState = ConnectionState.Disconnecting;
+				terminusClient.sendMessage(urm);
+			}
+			else
+			{
+				this.curConnectionState = ConnectionState.Disconnected;
+				terminusClient.disconnect();
+			}
 		}
-		
-		this.curRegistrationState = RegistrationState.Unregistered;
-		this.curConnectionState = ConnectionState.Disconnected;
 	}
 	
 	public String getConnectionID()
@@ -131,7 +157,10 @@ public class TerminusConnection implements INetworkCallbacks
 	@Override
 	public void onConnectionComplete() 
 	{
-		startRegistrationProtocol();
+		curConnectionState = ConnectionState.Connected;
+		
+		if (this.curRegistrationState != RegistrationState.Registered)
+			startRegistrationProtocol();
 		
 		if (callbacks != null)
 			callbacks.onConnectionComplete();
@@ -168,9 +197,18 @@ public class TerminusConnection implements INetworkCallbacks
 	@Override
 	public void onConnectionDropped() 
 	{
-		//TODO Reconnect!
 		if (callbacks != null)
 			callbacks.onConnectionDropped();
+		
+		/*
+		 * It's possible this happened because we are in the process of disconnecting.
+		 * We only want to reconnect if that's what our current status is
+		 */
+		if (this.curConnectionState == ConnectionState.Connected)
+		{
+			this.curConnectionState = ConnectionState.Disconnected;
+			reconnect();
+		}
 	}
 
 	@Override
@@ -202,6 +240,12 @@ public class TerminusConnection implements INetworkCallbacks
 	{
 		if (callbacks != null)
 			callbacks.onSendComplete();
+		
+		if (this.curConnectionState == ConnectionState.Disconnecting)
+		{
+			this.curConnectionState = ConnectionState.Disconnected;
+			terminusClient.disconnect();
+		}
 	}
 
 	@Override
@@ -217,7 +261,6 @@ public class TerminusConnection implements INetworkCallbacks
 	
 	private void startRegistrationProtocol()
 	{
-		curConnectionState = ConnectionState.Connected;
 		curRegistrationState = RegistrationState.Pending;
 		RegisterMessage rm = this.messageFactory.getRegisterMessage(this.uid);
 		this.terminusClient.sendMessage(rm);
@@ -234,28 +277,14 @@ public class TerminusConnection implements INetworkCallbacks
 			else
 			{
 				curRegistrationState = RegistrationState.Unregistered;
-				reconnectAndRegister();
+				reconnect();
 			}
 		}
 	}
 	
 	private void unregisterReceived(UnregisterMessage msg)
 	{
-		//The indirection is in case we need to actually do
-		//anything with the message in the future.
-		reconnectAndRegister();
-	}
-	
-	private void reconnectAndRegister()
-	{
-		/*
-		 * The event server doesn't know us and so we need to 
-		 * reconnect and start the registration protocol again
-		 */
-		
-		this.terminusClient.disconnect();
-		this.curConnectionState = ConnectionState.Disconnected;
 		this.curRegistrationState = RegistrationState.Unregistered;
-		this.connect(this.eventIPAddress, this.eventPort);
+		reconnect();
 	}
 }

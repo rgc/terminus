@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="edu.buffalo.cse.terminus.client"
+    android:versionCode="1"
+    android:versionName="1.0" >
+
+    <uses-sdk
+        android:minSdkVersion="9"
+        android:targetSdkVersion="17" />
+
+    <uses-permission android:name="android.permission.CAMERA" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.INTERNET"/>
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
+    <uses-permission android:name="android.permission.READ_PHONE_STATE"/>
+    
+    <application
+        android:allowBackup="true"
+        android:icon="@drawable/ic_launcher"
+        android:label="@string/app_name"
+        android:theme="@style/AppTheme" >
+        
+        <!--  
+        android:theme="@android:style/Theme.Holo.Light.NoActionBar.Fullscreen" - requires min sdk 13 
+        android:theme="@android:style/Theme.NoTitleBar" >	- Old default theme
+        -->
+        
+        <activity
+            android:name="edu.buffalo.cse.terminus.client.ConnectionParameters"
+            android:label="@string/app_name" 
+            android:screenOrientation="landscape" >
+        </activity>
+        
+        <activity
+            android:name="edu.buffalo.cse.terminus.client.GetSensorsActivity"
+            android:label="@string/app_name" 
+            android:screenOrientation="landscape" >
+        </activity>
+        
+        <activity
+            android:name="edu.buffalo.cse.terminus.client.TerminusClientMainActivity"
+            android:label="@string/app_name"
+            android:screenOrientation="landscape" >
+            
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+    </application>
+
+</manifest>

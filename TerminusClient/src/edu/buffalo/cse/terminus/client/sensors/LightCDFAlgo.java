@@ -25,10 +25,10 @@ public class LightCDFAlgo extends SensorAlgo
 		
 		CDFFunctions.shifta(llevel);
 		llevel[0] = event.values[0];
-		float dl = CDFFunctions.CDF1O4(llevel);
+		float dl = Math.abs(llevel[0] - llevel[1]);
 		
 		//TODO: Not checking dl??
-		if(llevel[0] > LIGHT_FACTOR)
+		if(dl > 1)
 		{
 			this.controller.sensorEventSensed(Sensor.TYPE_LIGHT);
 		}

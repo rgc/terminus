@@ -224,7 +224,7 @@ public class TerminusSensorManager implements SensorEventListener
 			supported[count++] = Sensor.TYPE_ACCELEROMETER;
 		
 		if (mag)
-			supported[count++] = Sensor.TYPE_GRAVITY;
+			supported[count++] = Sensor.TYPE_MAGNETIC_FIELD;
 		
 		if (light)
 			supported[count++] = Sensor.TYPE_LIGHT;

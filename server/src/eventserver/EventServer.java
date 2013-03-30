@@ -109,7 +109,7 @@ public class EventServer implements ITerminusMsgCallback, ITerminusServer
 		}
 		
 		eventCom.start();
-		runMessageProcThread();
+		//runMessageProcThread();
 	}
 
 	@Override
@@ -138,23 +138,7 @@ public class EventServer implements ITerminusMsgCallback, ITerminusServer
 					if (!eventQueue.isEmpty())
 					{
 						QueuedMessage qm = eventQueue.remove();
-						
-						if (!isRegistered(qm.message.getID()) && qm.message.getMessageType() != TerminusMessage.MSG_REGISTER)
-						{
-							/*
-							 * No session established for this id.
-							 * We'll send a Unregister message and won't take this message any further 
-							 */
-							UnregisterMessage urm = messageFactory.getUnregisterMessage(qm.message.getID());
-							qm.connection.sendMessage(urm);
-						}
-						
-						EventServer.this.processMessage(qm);
-						
-						if (EventServer.this.messageCallback != null)
-						{
-							EventServer.this.messageCallback.messageReceived(qm.connection, qm.message);
-						}
+						EventServer.this.processMessage(qm.message, qm.connection);
 					}
 
 					try
@@ -178,38 +162,55 @@ public class EventServer implements ITerminusMsgCallback, ITerminusServer
 			return this.sessions.containsKey(id);
 	}
 	
-	private void processMessage(QueuedMessage msg)
+	private void processMessage(TerminusMessage message, ATerminusConnection connection)
 	{
-		if (msg == null)
+		if (message == null || connection == null)
+		{
 			return;
+		}
+		else if (!isRegistered(message.getID()) && message.getMessageType() != TerminusMessage.MSG_REGISTER)
+		{
+			/*
+			 * No session established for this id.
+			 * We'll send a Unregister message and won't take this message any further 
+			 */
+			UnregisterMessage urm = messageFactory.getUnregisterMessage(message.getID());
+			connection.sendMessage(urm);
+			return;
+		}
 		
-		switch (msg.message.getMessageType())
+		switch (message.getMessageType())
 		{
 			case TerminusMessage.MSG_TEST:
-				if (msg.connection != null)
+				if (connection != null)
 				{
-					msg.connection.sendMessage(msg.message);
+					connection.sendMessage(message);
 				}
 				break;
 				
 			case TerminusMessage.MSG_REGISTER:
-				registrationRequest(msg);
+				registrationRequest(message, connection);
 				break;
 			
 			case TerminusMessage.MSG_UNREGISTER:
-				unregister(msg);
+				unregister(message, connection);
 				break;
 				
 			case TerminusMessage.MSG_EVENT:
-				processEvent(msg);
+				processEvent(message, connection);
 				break;
 				
 			default:
 				break;
 		}
+		
+		if (messageCallback != null)
+		{
+			messageCallback.messageReceived(connection, message);
+		}
 	}
 	
-	private void registrationRequest(QueuedMessage msg)
+	private void registrationRequest(TerminusMessage message, ATerminusConnection connection)
 	{
 		/*
 		 * Right now we simply accept the registration and
@@ -219,34 +220,34 @@ public class EventServer implements ITerminusMsgCallback, ITerminusServer
 		 * authentication server and run an authentication protocol.
 		 */
 		
-		String id = msg.message.getID();
+		String id = message.getID();
 		
 		if (sessions.contains(id))
 			sessions.remove(id);
 		
-		sessions.put(id, msg.connection);
+		sessions.put(id, connection);
 		
-		msg.connection.setID(id);
+		connection.setID(id);
 		
 		RegistrationResponse response = messageFactory.getRegistrationResponse(id);
 		response.setResult(RegistrationResponse.REGISTRATION_SUCCESS);
-		msg.connection.sendMessage(response);
+		connection.sendMessage(response);
 	}
 	
-	private void processEvent(QueuedMessage qm)
+	private void processEvent(TerminusMessage message, ATerminusConnection connection)
 	{
 		//TODO do something with the event!
 		//		Alternatively, just register all handlers for 
 		//		events to receive callbacks.
 	}
 	
-	private void unregister(QueuedMessage qm)
+	private void unregister(TerminusMessage message, ATerminusConnection connection)
 	{
-		String id = qm.message.getID();
+		String id = message.getID();
 		if (isRegistered(id))
 		{
 			sessions.remove(id);
-			qm.connection.shutdown();
+			connection.shutdown();
 		}
 	}
 	
@@ -260,7 +261,12 @@ public class EventServer implements ITerminusMsgCallback, ITerminusServer
 		 * Just queue the message, it'll get processed by the processing thread.
 		 */
 		if (msg != null)
-			eventQueue.add(new QueuedMessage(connection, msg));
+		{
+			//eventQueue.add(new QueuedMessage(connection, msg));
+			//TODO: We could run this, or just let any long-running processes do so
+			
+			processMessage(msg, connection);
+		}
 	}
 	
 	public String getEventServerIP()

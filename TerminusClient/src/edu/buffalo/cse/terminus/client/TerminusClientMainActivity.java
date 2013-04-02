@@ -1,6 +1,8 @@
 	package edu.buffalo.cse.terminus.client;
 
+	
 import java.io.IOException;
+
 import java.net.SocketTimeoutException;
 import java.net.UnknownHostException;
 
@@ -21,6 +23,10 @@ import android.os.Bundle;
 import android.support.v4.app.FragmentActivity;
 import android.view.Menu;
 import android.view.Window;
+import android.view.WindowManager;
+
+import edu.buffalo.cse.terminus.client.sensors.CameraAlgo;
+import edu.buffalo.cse.terminus.client.sensors.CameraOpenCVAlgo;
 
 public class TerminusClientMainActivity extends FragmentActivity implements INetworkCallbacks, SensorEventListener
 {
@@ -33,6 +39,8 @@ public class TerminusClientMainActivity extends FragmentActivity implements INet
 	String ipAddress = "";
 	int port = 0;
 	TerminusController controller = null;
+
+    private CameraAlgo camera = null;
 	
 	private void setUpFragments()
 	{
@@ -47,6 +55,7 @@ public class TerminusClientMainActivity extends FragmentActivity implements INet
 	public void setCameraFragment(Fragment f)
 	{
 		//TODO: set camera in camera place holder layout
+		// need to talk to Scott about this...
 	}
 	
 	@Override
@@ -57,6 +66,12 @@ public class TerminusClientMainActivity extends FragmentActivity implements INet
 		setContentView(R.layout.activity_terminus_client_main);
 		
 		setUpFragments();
+		
+        getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+        
+        // this line changes with different implementations
+        camera = new CameraOpenCVAlgo(controller, this);
+        
 	}
 	
 	@Override
@@ -68,6 +83,12 @@ public class TerminusClientMainActivity extends FragmentActivity implements INet
 		{
 			controller.stop();
 		}
+		
+		if(camera != null)
+		{
+			camera.pauseAlgo();
+		}
+        
 	}
 	
 	@Override
@@ -75,9 +96,10 @@ public class TerminusClientMainActivity extends FragmentActivity implements INet
 	{
 		super.onResume();
 		
-		//The fragments aren't created until after onCreate
-		//statusFragment.setTextColor(Color.RED);
-		//statusFragment.setText("Network Status: Disconnected");
+		getParameters = false;
+		
+		statusFragment.setSensorText("Sensor Count: 0");
+		statusFragment.setNetworkText("Network: Not Connected", Color.BLACK);
 		
 		if (getParameters)
 		{
@@ -86,6 +108,11 @@ public class TerminusClientMainActivity extends FragmentActivity implements INet
 		else if (controller != null)
 		{
 			controller.start();
+		}
+		
+		if(camera != null)
+		{
+			camera.resumeAlgo();
 		}
 	}
 	
@@ -137,6 +164,10 @@ public class TerminusClientMainActivity extends FragmentActivity implements INet
 			
 			controller = new TerminusController(ns, ss, this);
 			controller.start();
+			
+			// this smells - controller set in constructor is null
+	        camera.setController(controller);
+			
 		}
 	}
 	

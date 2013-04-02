@@ -1,11 +1,12 @@
 package edu.buffalo.cse.terminus.client;
 
 import android.hardware.SensorEventListener;
+import edu.buffalo.cse.terminus.client.sensors.ICameraCallbacks;
 import edu.buffalo.cse.terminus.client.network.INetworkCallbacks;
 import edu.buffalo.cse.terminus.client.network.TerminusConnection;
 import edu.buffalo.cse.terminus.client.sensors.*;
 
-public class TerminusController
+public class TerminusController implements ICameraCallbacks
 {
 	static class NetworkSettings
 	{
@@ -14,7 +15,7 @@ public class TerminusController
 		INetworkCallbacks networkCallbacks;
 		
 		//This allows us to turn off networking for testing
-		boolean enabled = true;
+		boolean enabled = false;
 	}
 	
 	static class SensorSettings
@@ -45,8 +46,8 @@ public class TerminusController
 	{
 		sensorManager.start();
 		
-		if (networkSettings.enabled)
-			connection.connect(networkSettings.ip, networkSettings.port);
+		//if (networkSettings.enabled)
+		//	connection.connect(networkSettings.ip, networkSettings.port);
 	}
 	
 	public void stop()
@@ -62,9 +63,9 @@ public class TerminusController
 		connection.sendMessage(connection.getEventMessage());
 	}
 	
-	public void cameraEventSensed()
+	public void onCameraMotionDetected()
 	{
-		
+		// send message
 	}
 	
 	public void soundEventSensed()

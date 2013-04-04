@@ -15,7 +15,7 @@ public class TerminusController implements ICameraCallbacks
 		INetworkCallbacks networkCallbacks;
 		
 		//This allows us to turn off networking for testing
-		boolean enabled = false;
+		boolean enabled = true;
 	}
 	
 	static class SensorSettings
@@ -46,8 +46,8 @@ public class TerminusController implements ICameraCallbacks
 	{
 		sensorManager.start();
 		
-		//if (networkSettings.enabled)
-		//	connection.connect(networkSettings.ip, networkSettings.port);
+		if (networkSettings.enabled)
+			connection.connect(networkSettings.ip, networkSettings.port);
 	}
 	
 	public void stop()

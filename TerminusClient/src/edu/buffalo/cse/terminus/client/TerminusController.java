@@ -37,7 +37,7 @@ public class TerminusController implements ICameraCallbacks
 		activity = a;
 		
 		networkSettings = ns;
-		connection = new TerminusConnection(ns.networkCallbacks, activity);
+		connection = new TerminusConnection(ns.networkCallbacks);
 		
 		sensorManager = new TerminusSensorManager(ss.sensorList, ss.listener, this, activity);
 	}

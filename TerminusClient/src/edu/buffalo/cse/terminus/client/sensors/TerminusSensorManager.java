@@ -42,7 +42,7 @@ public class TerminusSensorManager implements SensorEventListener
 	{
 		for (int i = 0; i < this.sensors.length; i++)
 		{
-			switch (i)
+			switch (this.sensors[i])
 			{
 			case Sensor.TYPE_ACCELEROMETER:
 				accelerometerAlgo = new AccelCDFAlgo(controller); 
@@ -134,7 +134,7 @@ public class TerminusSensorManager implements SensorEventListener
 			
 			break;
 			
-		case Sensor.TYPE_GRAVITY:
+		case Sensor.TYPE_MAGNETIC_FIELD:
 			if (magnetometerAlgo != null)
 			{
 				magnetometerAlgo.onSensorChanged(event);

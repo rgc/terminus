@@ -4,9 +4,7 @@ import java.io.IOException;
 import java.net.SocketTimeoutException;
 import java.net.UnknownHostException;
 
-import android.app.Activity;
-import android.content.Context;
-import android.telephony.TelephonyManager;
+import android.os.Build;
 import edu.buffalo.cse.terminus.client.network.ATerminusClient;
 import edu.buffalo.cse.terminus.messages.ITerminusMessageFactory;
 import edu.buffalo.cse.terminus.messages.RegisterMessage;
@@ -44,7 +42,7 @@ public class TerminusConnection implements INetworkCallbacks
 	private String eventIPAddress;
 	private int eventPort;
 	
-	public TerminusConnection(INetworkCallbacks c, Activity a) 
+	public TerminusConnection(INetworkCallbacks c) 
 	{
 		terminusClient = new LowLevelClient();
 		terminusClient.setCallback(this);
@@ -52,13 +50,33 @@ public class TerminusConnection implements INetworkCallbacks
 		curConnectionState = ConnectionState.Disconnected;
 		curRegistrationState = RegistrationState.Unregistered;
 		
-		setUserID(a);
+		setUserID();
 	}
 	
-	private void setUserID(Activity a)
+	private void setUserID()
 	{
-		TelephonyManager mgr = (TelephonyManager)a.getSystemService(Context.TELEPHONY_SERVICE);
-		this.uid = mgr.getDeviceId();
+		//This didn't work on tablets
+		//TelephonyManager mgr = (TelephonyManager)a.getSystemService(Context.TELEPHONY_SERVICE);
+		//this.uid = mgr.getDeviceId();
+		
+		/*
+		 * Try hardware serial number 
+		 * If that doesn't work, try ID
+		 * If that still doesn't work, throw in a bogus id that 
+		 * we'll catch as we're debugging. 
+		 */
+		if (Build.SERIAL != null && !Build.SERIAL.isEmpty())
+		{
+			this.uid = Build.SERIAL;
+		}
+		else if (Build.ID != null && !Build.ID.isEmpty())
+		{
+			this.uid = Build.ID;
+		}
+		else
+		{
+			this.uid = "NO ID!";
+		}
 	}
 	
 	public void connect(String host, int port)

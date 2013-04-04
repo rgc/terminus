@@ -65,7 +65,7 @@ public class TerminusController implements ICameraCallbacks
 	
 	public void onCameraMotionDetected()
 	{
-		// send message
+		connection.sendMessage(connection.getEventMessage());
 	}
 	
 	public void soundEventSensed()

@@ -1,0 +1,20 @@
+
+need to manually install the opencv manager on emulator:
+[rgc@frisbee apk]$ /opt/adt-bundle-linux-x86_64/sdk/platform-tools/adb install /home/rgc/code/OpenCV-2.4.4-android-sdk/apk/OpenCV_2.4.4_Manager_2.6_armv7a-neon.apk 
+2014 KB/s (5129349 bytes in 2.486s)
+	pkg: /data/local/tmp/OpenCV_2.4.4_Manager_2.6_armv7a-neon.apk
+Success
+[rgc@frisbee apk]$ 
+
+
+need to manually install the opencv manager on phonelab phone:
+[rgc@frisbee ~]$ /opt/adt-bundle-linux-x86_64/sdk/platform-tools/adb install /home/rgc/code/OpenCV-2.4.4-android-sdk/apk/OpenCV_2.4.4_binary_pack_armv7a.apk 
+5147 KB/s (4468541 bytes in 0.847s)
+	pkg: /data/local/tmp/OpenCV_2.4.4_binary_pack_armv7a.apk
+Success
+
+[rgc@frisbee ~]$ /opt/adt-bundle-linux-x86_64/sdk/platform-tools/adb install /home/rgc/code/OpenCV-2.4.4-android-sdk/apk/OpenCV_2.4.4_Manager_2.6_armv7a-neon.apk 
+5260 KB/s (5129349 bytes in 0.952s)
+	pkg: /data/local/tmp/OpenCV_2.4.4_Manager_2.6_armv7a-neon.apk
+Success
+

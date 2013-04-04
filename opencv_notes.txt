@@ -1,0 +1,17 @@
+
+To build an android app with the opencv lib, import existing project into your workspace:
+/terminus/lib/OpenCV-2.4.4-android-sdk/sdk/java/
+
+Then in your project, go to project properties->android->Library and add a reference to the project (don't check "is library" box).
+
+I tried with the jar file in /terminus/lib/OpenCV-2.4.4-android-sdk/sdk/java/bin/ and it wouldn't work...
+
+
+if you need to manually install the opencv manager on emulator:
+/opt/adt-bundle-linux-x86_64/sdk/platform-tools/adb install /home/rgc/code/OpenCV-2.4.4-android-sdk/apk/OpenCV_2.4.4_Manager_2.6_armv7a-neon.apk 
+
+if need to manually install the opencv manager on phonelab phone:
+/opt/adt-bundle-linux-x86_64/sdk/platform-tools/adb install /home/rgc/code/OpenCV-2.4.4-android-sdk/apk/OpenCV_2.4.4_binary_pack_armv7a.apk 
+
+/opt/adt-bundle-linux-x86_64/sdk/platform-tools/adb install /home/rgc/code/OpenCV-2.4.4-android-sdk/apk/OpenCV_2.4.4_Manager_2.6_armv7a-neon.apk 
+

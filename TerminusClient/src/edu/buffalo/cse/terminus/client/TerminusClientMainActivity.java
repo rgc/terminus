@@ -97,7 +97,7 @@ public class TerminusClientMainActivity extends FragmentActivity implements INet
 		super.onResume();
 		
 		// disable prompt for IP
-		getParameters = false;
+		//getParameters = false;
 		
 		statusFragment.setSensorText("Sensor Count: 0");
 		statusFragment.setNetworkText("Network: Not Connected", Color.BLACK);

@@ -3,7 +3,19 @@
     <item
         android:id="@+id/menu_settings"
         android:orderInCategory="100"
-        android:showAsAction="never"
+        android:showAsAction="always"
         android:title="@string/menu_settings"/>
 
+    <item
+        android:id="@+id/menu_reconnect"
+        android:orderInCategory="101"
+        android:showAsAction="always"
+        android:title="@string/menu_reconnect"/>
+        
+  	<item
+        android:id="@+id/menu_disconnect"
+        android:orderInCategory="102"
+        android:showAsAction="always"
+        android:title="@string/menu_disconnect"/>
+            
 </menu>

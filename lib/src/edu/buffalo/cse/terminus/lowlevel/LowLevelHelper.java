@@ -73,8 +73,7 @@ public class LowLevelHelper
 		messageOS.write(getIntArray((message.getMessageType())));
 		
 		/* ID */
-		messageOS.write(message.getID().getBytes());
-		messageOS.write(0);		//Null terminator
+		LowLevelHelper.writeString(message.getID(), messageOS);
 	}
 	
 	public static void putMessageLength(byte[] message)
@@ -86,5 +85,11 @@ public class LowLevelHelper
 		
 		for (int i = 0; i < 4; i++)
 			message[i] = lenArray[i];
+	}
+	
+	public static void writeString(String s, ByteArrayOutputStream os) throws IOException
+	{
+		os.write(s.getBytes());
+		os.write(0);	//Null terminator
 	}
 }

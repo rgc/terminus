@@ -54,7 +54,7 @@ public class CameraOpenCVAlgo extends CameraAlgo implements CvCameraViewListener
         mOpenCvCameraView = (CameraBridgeViewBase) activity.findViewById(R.id.cameraPlaceholder);
         
         mOpenCvCameraView.setVisibility(SurfaceView.VISIBLE);
-
+        
         mOpenCvCameraView.setCvCameraViewListener(this);
         
         mOpenCvCameraView.setMaxFrameSize(400, 400);
@@ -113,7 +113,7 @@ public class CameraOpenCVAlgo extends CameraAlgo implements CvCameraViewListener
 	@Override
 	public void startAlgo() 
 	{
-		
+		resumeAlgo();
 	}
 	
 	@Override
@@ -126,14 +126,14 @@ public class CameraOpenCVAlgo extends CameraAlgo implements CvCameraViewListener
 	@Override
 	public void resumeAlgo() 
 	{
-		OpenCVLoader.initAsync(OpenCVLoader.OPENCV_VERSION_2_4_3, activity, mLoaderCallback);	
+		OpenCVLoader.initAsync(OpenCVLoader.OPENCV_VERSION_2_4_3, activity, mLoaderCallback);
 	}
 	
 	@Override
 	public void stopAlgo() 
 	{
         if (mOpenCvCameraView != null)
-            mOpenCvCameraView.disableView();	
+            mOpenCvCameraView.disableView();
 	}
 
 	public void onCameraViewStarted(int width, int height) {
@@ -172,34 +172,35 @@ public class CameraOpenCVAlgo extends CameraAlgo implements CvCameraViewListener
 		// re-init or the old contours will stay on screen 
 		contours = new ArrayList<MatOfPoint>();
 		
-		Imgproc.findContours(mFGMask, contours, mHierarchy, Imgproc.RETR_EXTERNAL, Imgproc.CHAIN_APPROX_SIMPLE);
-		
-		// will draw the outlines on the regions - debug
-		//Imgproc.drawContours(mRgba, contours, -1, CONTOUR_COLOR, 3);
-		
-		boolean motion = false;
-		
-		Rect r;
-		for (int i = 0; i < contours.size(); i++) {
-			r = Imgproc.boundingRect(contours.get(i));
-			// if bounding rect larger than min area, draw rect on screen
-			if(r.area() > CONTOUR_AREA_THRESH) {
-				// draw a rectangle around any contour with area greater
-				// than threshold
-				Core.rectangle(mRgba, r.tl(), r.br(), CONTOUR_COLOR, 3);
-				
-				// we have motion!
-				motion = true;
+		if (!mFGMask.empty()) {
+			Imgproc.findContours(mFGMask, contours, mHierarchy, Imgproc.RETR_EXTERNAL, Imgproc.CHAIN_APPROX_SIMPLE);
+			
+			// will draw the outlines on the regions - debug
+			//Imgproc.drawContours(mRgba, contours, -1, CONTOUR_COLOR, 3);
+			
+			boolean motion = false;
+			
+			Rect r;
+			for (int i = 0; i < contours.size(); i++) {
+				r = Imgproc.boundingRect(contours.get(i));
+				// if bounding rect larger than min area, draw rect on screen
+				if(r.area() > CONTOUR_AREA_THRESH) {
+					// draw a rectangle around any contour with area greater
+					// than threshold
+					Core.rectangle(mRgba, r.tl(), r.br(), CONTOUR_COLOR, 3);
+					
+					// we have motion!
+					motion = true;
+				}
+			}
+			
+			// one event per frame, at most
+			if(motion) {
+				if(controller != null ) {
+					controller.onCameraMotionDetected();
+				}
 			}
 		}
-		
-		// one event per frame, at most
-		if(motion) {
-			if(controller != null ) {
-				controller.onCameraMotionDetected();
-			}
-		}
-		
 		return mRgba;
 	
 	}

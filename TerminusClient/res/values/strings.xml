@@ -1,8 +1,27 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-    <string name="app_name">TerminusClient</string>
-    <string name="hello_world">Hello world!</string>
+    <string name="app_name">Terminus Client</string>
+    
     <string name="menu_settings">Settings</string>
-
+    <string name="menu_reconnect">Reconnect</string>
+    <string name="menu_disconnect">Disconnect</string>
+    
+   	<string name="heading_activity">Terminus Settings</string>
+    <string name="heading_network">NETWORK</string>
+	<string name="heading_camera">CAMERA</string>
+	<string name="heading_sensors">SENSORS</string>
+	<string name="heading_sound">SOUND</string>
+	<string name="heading_debug">LAUNCH</string>
+	
+	<string name="hint_ip">Enter IP Address</string>
+	<string name="hint_port">Enter Port Number</string>
+	
+	<string name="camera_opt_none">No Camera</string>
+	<string name="camera_opt_native">OpenCV NativeCameraView</string>
+	<string name="camera_opt_java">OpenCV JavaCameraView</string>
+	<string name="camera_opt_lowlevel">Low Level Camera</string>
+	
+	<string name="sound_opt">Use Audio Monitoring</string>
+	
 </resources>

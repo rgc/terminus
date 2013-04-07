@@ -18,6 +18,7 @@ public class LowLevelReader
 	private int numBytes;
 	private ByteBuffer msgLenBuffer;
 	InputStream in;
+	Socket socket;
 	
 	public LowLevelReader(Socket s) throws IOException
 	{
@@ -26,6 +27,7 @@ public class LowLevelReader
 		msgLenBuffer = ByteBuffer.allocate(4);
 		msgLenBuffer.order(ByteOrder.BIG_ENDIAN);
 		in = s.getInputStream();
+		socket = s;
 		position = 0;
 		numBytes = 0;
 	}
@@ -51,8 +53,8 @@ public class LowLevelReader
 		if (numBytes == 0)
 		{
 			// Case a
-			while (numBytes <= 0)
-				numBytes = in.read(buffer);
+			if ((numBytes = in.read(buffer)) <= 0)
+				throw new IOException("Connection Closing");
 		}
 		else if (numBytes > 0 && numBytes < 4)
 		{
@@ -74,10 +76,10 @@ public class LowLevelReader
 			/*
 			 * Read some more data 
 			 */
-			int newBytes = 0;
+			int newBytes = in.read(buffer, numBytes, BUFFER_SIZE - numBytes);
 			
-			while (newBytes <= 0)
-				newBytes = in.read(buffer, numBytes, BUFFER_SIZE - numBytes);
+			if (newBytes <= 0)
+				throw new IOException("Connection Closing");
 			
 			numBytes += newBytes;
 		}
@@ -135,8 +137,9 @@ public class LowLevelReader
 				position = 0;
 				
 				/* Get more data */
-				while (numBytes <= 0)
-					numBytes = in.read(buffer);
+				
+				if ((numBytes = in.read(buffer)) <= 0)
+					throw new IOException("Connection Closing");
 			}
 		}
 		return getTypeSpecificMessage(message);

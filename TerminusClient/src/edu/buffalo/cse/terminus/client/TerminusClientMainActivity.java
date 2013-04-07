@@ -1,120 +1,101 @@
-	package edu.buffalo.cse.terminus.client;
-
+package edu.buffalo.cse.terminus.client;
 	
 import java.io.IOException;
 
 import java.net.SocketTimeoutException;
 import java.net.UnknownHostException;
 
-import edu.buffalo.cse.terminus.client.TerminusController.NetworkSettings;
-import edu.buffalo.cse.terminus.client.TerminusController.SensorSettings;
 import edu.buffalo.cse.terminus.client.network.INetworkCallbacks;
 import edu.buffalo.cse.terminus.messages.RegistrationResponse;
 import edu.buffalo.cse.terminus.messages.TerminusMessage;
-import android.support.v4.app.Fragment;
-import android.support.v4.app.FragmentManager;
-import android.support.v4.app.FragmentTransaction;
+import android.app.Activity;
 import android.content.Intent;
 import android.graphics.Color;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.os.Bundle;
-import android.support.v4.app.FragmentActivity;
 import android.view.Menu;
+import android.view.MenuItem;
 import android.view.Window;
 import android.view.WindowManager;
+import android.widget.TextView;
 
 import edu.buffalo.cse.terminus.client.sensors.CameraAlgo;
 import edu.buffalo.cse.terminus.client.sensors.CameraOpenCVAlgo;
 
-public class TerminusClientMainActivity extends FragmentActivity implements INetworkCallbacks, SensorEventListener
-{
-	StatusFragment statusFragment;
-	private boolean getParameters = true;
-	
-	private static final int INTENT_CONNECTION_PARAMS = 1;
-	private static final int INTENT_SENSOR_PARAMS = 2;
-	
-	String ipAddress = "";
-	int port = 0;
-	TerminusController controller = null;
-
+public class TerminusClientMainActivity extends Activity implements INetworkCallbacks, SensorEventListener
+{	
+	private TerminusController controller = null;
     private CameraAlgo camera = null;
-	
-	private void setUpFragments()
-	{
-		FragmentManager fm = this.getSupportFragmentManager();
-		FragmentTransaction ft = fm.beginTransaction();	
-		statusFragment = new StatusFragment();
-		
-		ft.add(R.id.statusPlaceholder, statusFragment);
-		ft.commit();
-	}
-	
-	public void setCameraFragment(Fragment f)
-	{
-		//TODO: set camera in camera place holder layout
-		// need to talk to Scott about this...
-	}
-	
+    private TextView tvNetwork;
+	private TextView tvSensors;
+    
 	@Override
 	protected void onCreate(Bundle savedInstanceState) 
 	{
 		super.onCreate(savedInstanceState);
+		
 		this.requestWindowFeature(Window.FEATURE_NO_TITLE);
 		setContentView(R.layout.activity_terminus_client_main);
+		getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 		
-		setUpFragments();
-		
-        getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
-        
-        // this line changes with different implementations
-        camera = new CameraOpenCVAlgo(controller, this);
-        
+        tvNetwork = (TextView) findViewById(R.id.tvNetwork);
+	    tvSensors = (TextView) findViewById(R.id.tvSensors);
 	}
 	
 	@Override
 	protected void onPause()
 	{
 		super.onPause();
-		
-		if (controller != null)
-		{
-			controller.stop();
-		}
-		
-		if(camera != null)
-		{
-			camera.pauseAlgo();
-		}
-        
+		stopSensors();
 	}
 	
 	@Override
 	protected void onResume()
 	{
 		super.onResume();
+		startSensors();
+	}
+	
+	private void startSensors()
+	{
+		/*
+		 * For now, we'll stop everything and re-start it.  In the future,
+		 * we should try to avoid the multiple onCreate/onResume issues.
+		 */
+		stopSensors();
 		
-		// disable prompt for IP
-		//getParameters = false;
+		TerminusSettings settings = new TerminusSettings();
+	    settings.retrieve(this);
+	    
+		setNetworkText("Network: Not Connected", Color.BLACK);
+		setSensorText("Sensor Count: " + String.valueOf(settings.sensorList.size()));
 		
-		statusFragment.setSensorText("Sensor Count: 0");
-		statusFragment.setNetworkText("Network: Not Connected", Color.BLACK);
+		controller = new TerminusController(settings, this, new UIEventBridge(this, this), this);
+		controller.start();
 		
-		if (getParameters)
+		switch (settings.cameraOption)
 		{
-			getParametersFromActivites();
+		case TerminusSettings.CAMERA_NATIVE:
+		case TerminusSettings.CAMERA_JAVA:
+			camera = new CameraOpenCVAlgo(controller, this);
+	        camera.startAlgo();
+	        break;
+	        
+        default:
+        	break;
 		}
-		else if (controller != null)
-		{
-			controller.start();
-		}
+		
+	}
+	
+	private void stopSensors()
+	{
+		if (controller != null)
+			controller.stop();
 		
 		if(camera != null)
-		{
-			camera.resumeAlgo();
-		}
+			camera.pauseAlgo();
 	}
 	
 	@Override
@@ -125,87 +106,76 @@ public class TerminusClientMainActivity extends FragmentActivity implements INet
 		return true;
 	}
 	
-	private void getParametersFromActivites()
-	{
-		getParameters = false;
-		Intent intent = new Intent(this, ConnectionParameters.class);
-		startActivityForResult(intent, INTENT_CONNECTION_PARAMS);
-	}
-	
+	/*
+	 * This is the method that gets called when the users clicks the
+	 * settings menu
+	 */
 	@Override
-	protected void onActivityResult(int requestCode, int resultCode, Intent data) 
+	public boolean onOptionsItemSelected(MenuItem item) 
 	{
-		if (resultCode != RESULT_OK)
-		{
-			finish();
-		}
-		else if (requestCode == INTENT_CONNECTION_PARAMS)
-		{
-			this.ipAddress = data.getStringExtra(ConnectionParameters.IP_ADDRESS_PARAM);
-			this.port = data.getIntExtra(ConnectionParameters.PORT_PARAM, 0);
-			
-			Intent intent = new Intent(this, GetSensorsActivity.class);
-			startActivityForResult(intent, INTENT_SENSOR_PARAMS);
-		}
-		else if (requestCode == INTENT_SENSOR_PARAMS)
-		{
-			int[] sensors = data.getIntArrayExtra(GetSensorsActivity.SENSORS_PARAM);
-			
-			statusFragment.setSensorText("Sensor Count: " + String.valueOf(sensors.length));
-			statusFragment.setNetworkText("Network: Not Connected", Color.BLACK);
-			
-			NetworkSettings ns = new NetworkSettings();
-			ns.ip = ipAddress;
-			ns.port = port; 
-			ns.networkCallbacks = new UIEventBridge(this, this);
-			
-			SensorSettings ss = new SensorSettings();
-			ss.listener = this;
-			ss.sensorList = sensors;
-			
-			controller = new TerminusController(ns, ss, this);
-			controller.start();
-			
-			// this smells - controller set in constructor is null
-	        camera.setController(controller);
-			
-		}
+	    switch (item.getItemId()) 
+	    {
+	        case R.id.menu_settings:
+	            showSettings();
+	            return true;
+	        
+	        case R.id.menu_reconnect:
+	        	controller.reconnectNetwork();
+	        	return true;
+	        	
+	        case R.id.menu_disconnect:
+	        	controller.disconnectNetwork();
+	        	return true;
+	        	
+	        default:
+	            return super.onOptionsItemSelected(item);
+	    }
 	}
 	
+	private void showSettings()
+	{
+		/*
+		 * We don't care about the result.  For now, onResume handles, 
+		 * we just re-launching everything after reloading the parameters. 
+		 */
+		Intent intent = new Intent(this, SettingsActivity.class);
+		startActivity(intent);
+	}
+		
 	@Override
 	public void onConnectionComplete() 
 	{
-		statusFragment.setNetworkText("Network: Connected", Color.GREEN);
+		setNetworkText("Network: Connected", Color.GREEN);
 	}
 
 	@Override
 	public void onConnectionError(IOException e) 
 	{
-		statusFragment.setNetworkText("Network: Connection Error", Color.RED);
+		setNetworkText("Network: Connection Error", Color.RED);
 	}
 
 	@Override
 	public void onConnectionError(SocketTimeoutException e) 
 	{
-		statusFragment.setNetworkText("Network: Connection Timed Out", Color.RED);
+		setNetworkText("Network: Connection Timed Out", Color.RED);
 	}
 
 	@Override
 	public void onConnectionError(UnknownHostException e) 
 	{
-		statusFragment.setNetworkText("Network: Unknown Host", Color.RED);
+		setNetworkText("Network: Unknown Host", Color.RED);
 	}
 
 	@Override
 	public void onDisconnectComplete() 
 	{
-		statusFragment.setNetworkText("Network: Not Connected", Color.BLACK);
+		setNetworkText("Network: Not Connected", Color.BLACK);
 	}
 
 	@Override
 	public void onConnectionDropped() 
 	{
-		statusFragment.setNetworkText("Network: Not Connected", Color.BLACK);
+		setNetworkText("Network: Not Connected", Color.BLACK);
 	}
 
 	@Override
@@ -216,7 +186,7 @@ public class TerminusClientMainActivity extends FragmentActivity implements INet
 			RegistrationResponse res = (RegistrationResponse) msg;
 			if (res.getResult() == RegistrationResponse.REGISTRATION_SUCCESS)
 			{
-				statusFragment.setNetworkText("Network: Connected", Color.GREEN);
+				setNetworkText("Network: Connected", Color.GREEN);
 			}
 		}
 	}
@@ -247,16 +217,56 @@ public class TerminusClientMainActivity extends FragmentActivity implements INet
 		switch (event.sensor.getType())
 		{
 		case Sensor.TYPE_ACCELEROMETER:
-			statusFragment.setSensorText("Accelerometer: " + t);
+			setSensorText("Accelerometer: " + t);
 			break;
 			
 		case Sensor.TYPE_MAGNETIC_FIELD:
-			statusFragment.setSensorText("Magnetometer: " + t);
+			setSensorText("Magnetometer: " + t);
 			break;
 			
 		case Sensor.TYPE_LIGHT:
-			statusFragment.setSensorText("Light: " + t);
+			setSensorText("Light: " + t);
 			break;
+		}
+	}
+	
+	/*
+	 * Try to set the textview's text/color
+	 * 
+	 * If this is called before the view has been created,
+	 * nothing happens
+	 */
+	public void setNetworkText(String text)
+	{
+		if (tvNetwork != null)
+		{
+			tvNetwork.setText(text);
+		}
+	}
+	
+	public void setNetworkText(String text, int color)
+	{
+		if (tvNetwork != null)
+		{
+			tvNetwork.setText(text);
+			tvNetwork.setTextColor(color);
+		}
+	}
+
+	public void setSensorText(String text)
+	{
+		if (tvSensors != null)
+		{
+			tvSensors.setText(text);
+		}
+	}
+	
+	public void setSensorText(String text, int color)
+	{
+		if (tvSensors != null)
+		{
+			tvSensors.setText(text);
+			tvSensors.setTextColor(color);
 		}
 	}
 }

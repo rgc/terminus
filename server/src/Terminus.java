@@ -55,6 +55,29 @@ public class Terminus implements ITerminusMsgCallback
 			String timestamp = new SimpleDateFormat("MM/dd/yyyy hh:mm:ss").format(em.getTimestamp());
 			System.out.println("Event Received");
 			System.out.println("    From: " + msg.getID());
+			
+			switch (em.getEventType())
+			{
+			case EventMessage.EVENT_ACCELEROMETER:
+				System.out.println("    Type: Accelerometer");
+				break;
+			case EventMessage.EVENT_MAGNETOMETER:
+				System.out.println("    Type: Magnetometer");
+				break;
+			case EventMessage.EVENT_LIGHT:
+				System.out.println("    Type: Light");
+				break;
+			case EventMessage.EVENT_CAMERA_MOTION:
+				System.out.println("    Type: Camera");
+				break;
+			case EventMessage.EVENT_SOUND:
+				System.out.println("    Type: Sound");
+				break;
+			default:
+				System.out.println("    Type: Unknown");
+				break;
+			}
+			
 			System.out.println("    Time: " + timestamp);
 			System.out.println();
 			break;

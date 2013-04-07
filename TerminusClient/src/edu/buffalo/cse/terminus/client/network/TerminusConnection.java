@@ -4,7 +4,9 @@ import java.io.IOException;
 import java.net.SocketTimeoutException;
 import java.net.UnknownHostException;
 
+import android.app.Activity;
 import android.os.Build;
+import android.provider.Settings.Secure;
 import edu.buffalo.cse.terminus.client.network.ATerminusClient;
 import edu.buffalo.cse.terminus.messages.ITerminusMessageFactory;
 import edu.buffalo.cse.terminus.messages.RegisterMessage;
@@ -24,6 +26,7 @@ public class TerminusConnection implements INetworkCallbacks
 	{
 		Disconnected,
 		Disconnecting,
+		Reconnecting,
 		Connecting,
 		Connected
 	}
@@ -42,7 +45,7 @@ public class TerminusConnection implements INetworkCallbacks
 	private String eventIPAddress;
 	private int eventPort;
 	
-	public TerminusConnection(INetworkCallbacks c) 
+	public TerminusConnection(INetworkCallbacks c, Activity a) 
 	{
 		terminusClient = new LowLevelClient();
 		terminusClient.setCallback(this);
@@ -50,22 +53,28 @@ public class TerminusConnection implements INetworkCallbacks
 		curConnectionState = ConnectionState.Disconnected;
 		curRegistrationState = RegistrationState.Unregistered;
 		
-		setUserID();
+		setUserID(a);
 	}
 	
-	private void setUserID()
+	private void setUserID(Activity a)
 	{
 		//This didn't work on tablets
 		//TelephonyManager mgr = (TelephonyManager)a.getSystemService(Context.TELEPHONY_SERVICE);
 		//this.uid = mgr.getDeviceId();
 		
 		/*
-		 * Try hardware serial number 
+		 * First, try android id
+		 * Next, try hardware serial number 
 		 * If that doesn't work, try ID
 		 * If that still doesn't work, throw in a bogus id that 
 		 * we'll catch as we're debugging. 
 		 */
-		if (Build.SERIAL != null && !Build.SERIAL.isEmpty())
+		
+		String androidID = Secure.getString(a.getContentResolver(),Secure.ANDROID_ID);
+		
+		if (androidID != null)
+			this.uid = androidID; 
+		else if (Build.SERIAL != null && !Build.SERIAL.isEmpty() && Build.SERIAL == Build.UNKNOWN)
 		{
 			this.uid = Build.SERIAL;
 		}
@@ -108,9 +117,9 @@ public class TerminusConnection implements INetworkCallbacks
 		}
 	}
 	
-	public TerminusMessage getEventMessage()
+	public ITerminusMessageFactory getMessageFactory()
 	{
-		return messageFactory.getEventMessage(this.uid);
+		return messageFactory;
 	}
 	
 	public void sendMessage(TerminusMessage m)
@@ -128,8 +137,7 @@ public class TerminusConnection implements INetworkCallbacks
 		}
 		
 		this.terminusClient.disconnect();
-		this.curConnectionState = ConnectionState.Disconnected;
-		this.connect(this.eventIPAddress, this.eventPort);
+		this.curConnectionState = ConnectionState.Reconnecting;
 	}
 	
 	/*
@@ -195,8 +203,17 @@ public class TerminusConnection implements INetworkCallbacks
 	@Override
 	public void onDisconnectComplete() 
 	{
-		if (callbacks != null)
-			callbacks.onDisconnectComplete();	
+		if (this.curConnectionState == ConnectionState.Reconnecting)
+		{
+			this.curConnectionState = ConnectionState.Disconnected;
+			this.connect(this.eventIPAddress, this.eventPort);
+		}
+		else
+		{
+			this.curConnectionState = ConnectionState.Disconnected;
+			if (callbacks != null)
+				callbacks.onDisconnectComplete();
+		}
 	}
 
 	@Override

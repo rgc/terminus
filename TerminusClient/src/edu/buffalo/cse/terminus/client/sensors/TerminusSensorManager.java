@@ -1,8 +1,10 @@
 package edu.buffalo.cse.terminus.client.sensors;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import edu.buffalo.cse.terminus.client.TerminusController;
+import edu.buffalo.cse.terminus.client.TerminusSettings;
 
 import android.app.Activity;
 import android.hardware.Sensor;
@@ -11,38 +13,36 @@ import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 
 public class TerminusSensorManager implements SensorEventListener 
-{
-	public static final int SENSOR_TYPE_CAMERA = -2;
-	public static final int SENSOR_TYPE_MIC = -3;
-	
+{	
 	/*
 	 * This is just for UI updates/debugging
 	 */
 	private SensorEventListener sensorCallback;
 	
 	private SensorManager sensorManager;
-	private int[] sensors;
+	private TerminusSettings settings;
 	private TerminusController controller;
 	
 	private SensorAlgo accelerometerAlgo;
 	private SensorAlgo magnetometerAlgo;
 	private SensorAlgo lightAlgo;
 	
-	public TerminusSensorManager(int[] sensors, SensorEventListener l, TerminusController c, Activity a)
+	public TerminusSensorManager(TerminusSettings settings, SensorEventListener listener, 
+			TerminusController controller, Activity activity)
 	{
-		this.sensors = sensors;
-		this.controller = c;
-		this.sensorCallback = l;
+		this.settings = settings;
+		this.controller = controller;
+		this.sensorCallback = listener;
 		
-		sensorManager = (SensorManager) a.getSystemService(android.content.Context.SENSOR_SERVICE);
+		sensorManager = (SensorManager) activity.getSystemService(android.content.Context.SENSOR_SERVICE);
 		createSensorAlgos();
 	}
 	
 	private void createSensorAlgos()
 	{
-		for (int i = 0; i < this.sensors.length; i++)
+		for (int i = 0; i < settings.sensorList.size(); i++)
 		{
-			switch (this.sensors[i])
+			switch (settings.sensorList.get(i))
 			{
 			case Sensor.TYPE_ACCELEROMETER:
 				accelerometerAlgo = new AccelCDFAlgo(controller); 
@@ -91,14 +91,10 @@ public class TerminusSensorManager implements SensorEventListener
 		/*
 		 * Register all sensors that were selected
 		 */
-		for (int i = 0; i < sensors.length; i++)
+		for (int i = 0; i < settings.sensorList.size(); i++)
 		{
-			int type = sensors[i];
-			
-			if (type != SENSOR_TYPE_CAMERA && type != SENSOR_TYPE_MIC)
-			{
-				sensorManager.registerListener(this, sensorManager.getDefaultSensor(type),SensorManager.SENSOR_DELAY_UI);	
-			}
+			int type = settings.sensorList.get(i);
+			sensorManager.registerListener(this, sensorManager.getDefaultSensor(type),SensorManager.SENSOR_DELAY_UI);	
 	    }
 		startSensorAlgos();
 	}
@@ -162,7 +158,7 @@ public class TerminusSensorManager implements SensorEventListener
 		}
 	}
 	
-	public static int[] getSupportedSensors(Activity context)
+	public static List<Integer> getSupportedSensors(Activity context)
 	{
 		/*
 		 * Both of the following need to be true in order to use
@@ -171,63 +167,30 @@ public class TerminusSensorManager implements SensorEventListener
 		 *  - The device needs to support it 
 		 */
 		
-		/*
-		 * We hard code camera and microphone
-		 * These are the other sensors we currently support
-		 */
-		boolean accel = false;
-		boolean mag = false;
-		boolean light = false;
-		
 		SensorManager sm = (SensorManager) context.getSystemService(Activity.SENSOR_SERVICE);
 		List<Sensor> sensors = sm.getSensorList(Sensor.TYPE_ALL);
+		ArrayList<Integer> supported = new ArrayList<Integer>();
 		
 		for (Sensor s : sensors)
 		{
 			switch (s.getType())
 			{
 			case Sensor.TYPE_ACCELEROMETER:
-				accel = true;
+				supported.add(Sensor.TYPE_ACCELEROMETER);
 				break;
 				
 			case Sensor.TYPE_LIGHT:
-				light = true;
+				supported.add(Sensor.TYPE_LIGHT);
 				break;
 				
-			case Sensor.TYPE_GRAVITY:
-				mag = true;
+			case Sensor.TYPE_MAGNETIC_FIELD:
+				supported.add(Sensor.TYPE_MAGNETIC_FIELD);
 				break;
 				
 			default:
 				break;
 			}
 		}
-		
-		int count = 2;
-		
-		if (accel)
-			count++;
-		
-		if (mag)
-			count++;
-		
-		if (light)
-			count++;
-		
-		int[] supported = new int[count];
-		
-		supported[0] = SENSOR_TYPE_CAMERA;
-		supported[1] = SENSOR_TYPE_MIC;
-		
-		count = 2;
-		if (accel)
-			supported[count++] = Sensor.TYPE_ACCELEROMETER;
-		
-		if (mag)
-			supported[count++] = Sensor.TYPE_MAGNETIC_FIELD;
-		
-		if (light)
-			supported[count++] = Sensor.TYPE_LIGHT;
 		
 		return supported;
 	}
@@ -238,12 +201,6 @@ public class TerminusSensorManager implements SensorEventListener
 		
 		switch (type)
 		{
-		case SENSOR_TYPE_CAMERA:
-			out = "Camera";
-			break;
-		case SENSOR_TYPE_MIC:
-			out = "Microphone";
-			break;
 		case Sensor.TYPE_ACCELEROMETER:
 			out = "Accelerometer";
 			break;

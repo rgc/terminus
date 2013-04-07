@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <dimen name="before_heading_margin">10dp</dimen>
+    <dimen name="heading_margin_left">10dp</dimen>
+    <dimen name="line_margin_sides">5dp</dimen>
+    <dimen name="control_margin_top">5dp</dimen>
+</resources>

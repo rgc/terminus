@@ -7,7 +7,8 @@ import edu.buffalo.cse.terminus.client.TerminusController;
 
 public class AccelCDFAlgo extends SensorAlgo 
 {
-	public static final int VIBRATION_FACTOR = 20;
+	public static int VIBRATION_FACTOR = 20;
+	public static boolean FirstAclPri = false;
 	
 	//raw sensor data
 	private float[] xacel;
@@ -44,7 +45,17 @@ public class AccelCDFAlgo extends SensorAlgo
 		//check for large change in some direction
 		if((dx > VIBRATION_FACTOR)||(dy > VIBRATION_FACTOR)||(dz > VIBRATION_FACTOR))
 		{
-			this.controller.sensorEventSensed(Sensor.TYPE_ACCELEROMETER);
+			int AclPri = 0;
+			if(FirstAclPri == false){
+				FirstAclPri = true;
+				AclPri+=30;
+			}
+			AclPri+=(dx/10);
+			AclPri+=(dy/10);
+			AclPri+=(dz/10);
+			
+			this.controller.sensorEventSensed(Sensor.TYPE_ACCELEROMETER, AclPri);
+			
 		}
 	}
 

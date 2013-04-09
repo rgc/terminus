@@ -25,12 +25,14 @@ public class TerminusSettings
 	private static final String PARAM_CAMERA = "cameraOption";
 	private static final String PARAM_SOUND = "soundOption";
 	private static final String PARAM_SENSORS = "sensorList";
+	private static final String PARAM_PRIORITY = "minPriority";
 	
 	public String ipAddress = "";
 	public int port = 34411;
 	public int cameraOption = CAMERA_JAVA;
 	public boolean useSound = false;
 	public ArrayList<Integer> sensorList = new ArrayList<Integer>();
+	public int PriorityLimit = 0;
 	
 	public void retrieve(Context c)
 	{
@@ -40,6 +42,7 @@ public class TerminusSettings
 		cameraOption = settings.getInt(PARAM_CAMERA, CAMERA_NONE);
 		useSound = settings.getBoolean(PARAM_SOUND, false);
 		
+		PriorityLimit = settings.getInt(PARAM_PRIORITY, 0);
 		String allSensors = settings.getString(PARAM_SENSORS, "");
 		
 		if (allSensors.length() > 0)
@@ -71,6 +74,7 @@ public class TerminusSettings
 		e.putInt(PARAM_CAMERA, cameraOption);
 		e.putBoolean(PARAM_SOUND, useSound);
 		
+		e.putInt(PARAM_PRIORITY, PriorityLimit);
 		//No support for int arrays, so we'll build a csv string to serialize it.
 		String sensors = "";
 		

@@ -117,6 +117,14 @@ public class TerminusSensorManager implements SensorEventListener
 	@Override
 	public void onSensorChanged(SensorEvent event) 
 	{	
+		if(controller.TotPriority > 0){
+			controller.TotPriority-=1;
+			if(controller.TotPriority == 0){
+				LightCDFAlgo.FirstLitPri = false;
+				MagCDFAlgo.FirstMagPri = false;
+				AccelCDFAlgo.FirstAclPri = false;
+			}
+		}
 		switch (event.sensor.getType())
 		{
 		case Sensor.TYPE_ACCELEROMETER:
@@ -216,5 +224,47 @@ public class TerminusSensorManager implements SensorEventListener
 		}
 		
 		return out;
+	}
+	
+	public static String getSensorSensitivity(int type)
+	{
+		String out = "";
+		
+		switch (type)
+		{
+		case Sensor.TYPE_ACCELEROMETER:
+			out = String.valueOf(AccelCDFAlgo.VIBRATION_FACTOR);
+			break;
+		case Sensor.TYPE_MAGNETIC_FIELD:
+			out = String.valueOf(MagCDFAlgo.MAGNET_FACTOR);
+			break;
+		case Sensor.TYPE_LIGHT:
+			out = String.valueOf(LightCDFAlgo.LIGHT_FACTOR);
+			break;
+		default:
+			out = "";
+			break;
+		}
+		
+		return out;
+	}
+	
+	public static void setSensorSensitivity(int type, int value)
+	{	
+		switch (type)
+		{
+		case Sensor.TYPE_ACCELEROMETER:
+			AccelCDFAlgo.VIBRATION_FACTOR = value;
+			break;
+		case Sensor.TYPE_MAGNETIC_FIELD:
+			MagCDFAlgo.MAGNET_FACTOR = value;
+			break;
+		case Sensor.TYPE_LIGHT:
+			LightCDFAlgo.LIGHT_FACTOR = value;
+			break;
+		default:
+			
+			break;
+		}
 	}
 }

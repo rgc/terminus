@@ -7,7 +7,8 @@ import edu.buffalo.cse.terminus.client.TerminusController;
 
 public class MagCDFAlgo extends SensorAlgo 
 {
-	public static final int MAGNET_FACTOR = 20;
+	public static int MAGNET_FACTOR = 20;
+	public static boolean FirstMagPri = false;
 	
 	//raw sensor data
 	public float[] mlevel;
@@ -25,11 +26,17 @@ public class MagCDFAlgo extends SensorAlgo
 		
 		CDFFunctions.shifta(mlevel);
 		mlevel[0]=event.values[0];
-		float dm = CDFFunctions.CDF1O4(mlevel);
+		float dm = Math.abs(CDFFunctions.CDF1O4(mlevel));
 		
 		if(dm > MAGNET_FACTOR)
 		{
-			this.controller.sensorEventSensed(Sensor.TYPE_MAGNETIC_FIELD);
+			int MagPri = 0;
+			if(FirstMagPri == false){
+				FirstMagPri = true;
+				MagPri+=50;
+			}
+			MagPri+=(dm/10);
+			this.controller.sensorEventSensed(Sensor.TYPE_MAGNETIC_FIELD, MagPri);
 		}
 	}
 

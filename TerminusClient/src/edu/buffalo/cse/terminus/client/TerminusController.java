@@ -18,6 +18,8 @@ public class TerminusController implements ICameraCallbacks
 	
 	private TerminusClientMainActivity activity;
 	
+	public int TotPriority=0;
+	
 	public TerminusController(TerminusSettings settings, SensorEventListener listener, 
 			INetworkCallbacks networkCallbacks, TerminusClientMainActivity a)
 	{
@@ -59,8 +61,10 @@ public class TerminusController implements ICameraCallbacks
 		connection.disconnect();
 	}
 	
-	public void sensorEventSensed(int type)
+	public void sensorEventSensed(int type,int pri)
 	{
+		TotPriority+=pri;
+		
 		/* Convert to Terminus Message event types */
 		int eventType = 0;
 		
@@ -77,10 +81,12 @@ public class TerminusController implements ICameraCallbacks
 			break;
 		}
 		
-		EventMessage em = connection.getMessageFactory().getEventMessage(connection.getConnectionID());
-		em.setEventType(eventType);
-		
-		connection.sendMessage(em);
+		if(TotPriority >settings.PriorityLimit){
+			EventMessage em = connection.getMessageFactory().getEventMessage(connection.getConnectionID());
+			em.setEventType(eventType);
+			em.setPrority(TotPriority);
+			connection.sendMessage(em);
+		}
 	}
 	
 	public void onCameraMotionDetected()

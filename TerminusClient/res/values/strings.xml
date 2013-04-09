@@ -24,4 +24,5 @@
 	
 	<string name="sound_opt">Use Audio Monitoring</string>
 	
+	<string name="hint_priority">Minimum Priority</string>
 </resources>

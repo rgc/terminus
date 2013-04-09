@@ -7,7 +7,8 @@ import edu.buffalo.cse.terminus.client.TerminusController;
 
 public class LightCDFAlgo extends SensorAlgo 
 {
-	public static final int LIGHT_FACTOR = 20;
+	public static int LIGHT_FACTOR = 20;
+	public static boolean FirstLitPri = false;
 	
 	//raw sensor data
 	public float[] llevel;
@@ -27,10 +28,16 @@ public class LightCDFAlgo extends SensorAlgo
 		llevel[0] = event.values[0];
 		float dl = Math.abs(llevel[0] - llevel[1]);
 		
-		//TODO: Not checking dl??
+		
 		if(dl > 1)
 		{
-			this.controller.sensorEventSensed(Sensor.TYPE_LIGHT);
+			int LitPri = 0;
+			if(FirstLitPri == false){
+				FirstLitPri = true;
+				LitPri+=50;
+			}
+			LitPri+=dl;
+			this.controller.sensorEventSensed(Sensor.TYPE_LIGHT, LitPri);
 		}
 	}
 
@@ -45,5 +52,5 @@ public class LightCDFAlgo extends SensorAlgo
 	{
 		llevel = null;
 	}
-
+	
 }

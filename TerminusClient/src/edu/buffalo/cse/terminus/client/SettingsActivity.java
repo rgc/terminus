@@ -27,8 +27,19 @@ public class SettingsActivity extends Activity
 		}
 	}
 	
+	private class SensorSensitivity extends android.widget.EditText
+	{
+		int sensorType;
+		
+		public SensorSensitivity(Context context) 
+		{
+			super(context);
+		}
+	}
+	
 	private ArrayList<SensorCheckBox> sensorCheckBoxes;
-
+	private ArrayList<SensorSensitivity> SensorSensitivitys;
+	
 	@Override
 	protected void onCreate(Bundle savedInstanceState)
 	{
@@ -94,19 +105,28 @@ public class SettingsActivity extends Activity
 	
 	private void loadSensorSettings(TerminusSettings settings)
 	{
+		EditText et = (EditText) findViewById(R.id.mim_pri);
+		et.setText(String.valueOf(settings.PriorityLimit));
+		
 		LinearLayout layout = (LinearLayout) this.findViewById(R.id.sensorLayout);
 		
 		sensorCheckBoxes = new ArrayList<SensorCheckBox>();
+		SensorSensitivitys = new ArrayList<SensorSensitivity>();
 		List<Integer> sensors = TerminusSensorManager.getSupportedSensors(this);
 		
 		for (int i = 0; i < sensors.size(); i++)
 		{
 			SensorCheckBox cb = new SensorCheckBox(this);
+			SensorSensitivity ss = new SensorSensitivity(this);
 			sensorCheckBoxes.add(cb);
+			SensorSensitivitys.add(ss);
 			cb.sensorType = sensors.get(i);
+			ss.sensorType = sensors.get(i);
 			cb.setText(TerminusSensorManager.getSensorDescription(cb.sensorType));
+			ss.setText(TerminusSensorManager.getSensorSensitivity(ss.sensorType));
 			cb.setChecked(settings.containsSenor(cb.sensorType));
 			layout.addView(cb);
+			layout.addView(ss);
 		}
 	}
 	
@@ -169,10 +189,14 @@ public class SettingsActivity extends Activity
 	
 	private void saveSensorSettings(TerminusSettings settings)
 	{
+		EditText et = (EditText) findViewById(R.id.mim_pri);
+		settings.PriorityLimit = Integer.valueOf(et.getText().toString());
+		
 		settings.sensorList = new ArrayList<Integer>();
 		
 		for (int i = 0 ; i < sensorCheckBoxes.size(); i++)
 		{
+			TerminusSensorManager.setSensorSensitivity(SensorSensitivitys.get(i).sensorType, Integer.valueOf(SensorSensitivitys.get(i).getText().toString()));
 			if (sensorCheckBoxes.get(i).isChecked())
 				settings.sensorList.add(sensorCheckBoxes.get(i).sensorType);
 		}

@@ -1,4 +1,4 @@
-import java.text.SimpleDateFormat;
+import java.util.Date;
 
 import eventserver.EventServer;
 import eventserver.ITerminusMsgCallback;
@@ -10,11 +10,13 @@ import shared.ServerCloseException;
 public class Terminus implements ITerminusMsgCallback
 {
 	private EventServer tserver;
+	TerminusDashboard dashboard;
 	
 	public Terminus(String[] args)
 	{
 		this.tserver = new EventServer(this);
-		
+        dashboard = new TerminusDashboard();
+			
 		/* Start the server(s) */
 		try
 		{
@@ -33,58 +35,59 @@ public class Terminus implements ITerminusMsgCallback
 	@Override
 	public void messageReceived(ATerminusConnection connection, TerminusMessage msg)
 	{
-		if (msg == null)
+		if (msg == null) {
 			return;
-		
-		switch (msg.getMessageType())
-		{
-		case TerminusMessage.MSG_REGISTER:
-			System.out.println("Registration Message Received.  ID == " + msg.getID());
-			break;
-		
-		case TerminusMessage.MSG_UNREGISTER:
-			System.out.println("Unregistration Message Received.  ID == " + msg.getID());
-			break;
-			
-		case TerminusMessage.MSG_TEST:
-			System.out.println("Data in: " + ((TestMessage)msg).message);
-			break;
-			
-		case TerminusMessage.MSG_EVENT:
-			EventMessage em = (EventMessage)msg;
-			String timestamp = new SimpleDateFormat("MM/dd/yyyy hh:mm:ss").format(em.getTimestamp());
-			System.out.println("Event Received");
-			System.out.println("    From: " + msg.getID());
-			
-			switch (em.getEventType())
-			{
-			case EventMessage.EVENT_ACCELEROMETER:
-				System.out.println("    Type: Accelerometer");
-				break;
-			case EventMessage.EVENT_MAGNETOMETER:
-				System.out.println("    Type: Magnetometer");
-				break;
-			case EventMessage.EVENT_LIGHT:
-				System.out.println("    Type: Light");
-				break;
-			case EventMessage.EVENT_CAMERA_MOTION:
-				System.out.println("    Type: Camera");
-				break;
-			case EventMessage.EVENT_SOUND:
-				System.out.println("    Type: Sound");
-				break;
-			default:
-				System.out.println("    Type: Unknown");
-				break;
-			}
-			
-			System.out.println("    Time: " + timestamp);
-			System.out.println();
-			break;
-			
-		default:
-			break;
 		}
+
+		Date timestamp   = new Date();
+		String type		 = "Unknown";
+		
+		switch (msg.getMessageType()) {
+		
+			case TerminusMessage.MSG_REGISTER:
+				type = "Reg";
+				break;
+
+			case TerminusMessage.MSG_UNREGISTER:
+				type = "Unreg";
+				break;
+
+			case TerminusMessage.MSG_TEST:
+				type = "Test";
+
+			break;
+
+			case TerminusMessage.MSG_EVENT:
+				EventMessage em  = (EventMessage)msg;
+
+				switch (em.getEventType()) {
+					case EventMessage.EVENT_ACCELEROMETER:
+						type = "Accel";
+						break;
+					case EventMessage.EVENT_MAGNETOMETER:
+						type = "Magno";
+						break;
+					case EventMessage.EVENT_LIGHT:
+						type = "Light";
+						break;
+					case EventMessage.EVENT_CAMERA_MOTION:
+						type = "Camera";
+						if(em.getData() != null) {
+							System.out.println(em.getData().length);
+							dashboard.addUpdateImage(em.getID(), em.getData());
+						} else {
+							System.out.println("null image");
+						}
+						break;
+					case EventMessage.EVENT_SOUND:
+						type = "Sound";
+						break;
+						
+				} // end switch
+		} // end switch
+		
+		dashboard.addMessage(msg.getID(), type, timestamp);
+		System.out.println(type + " Message Received from" + msg.getID());
 	}
 	
 	/**

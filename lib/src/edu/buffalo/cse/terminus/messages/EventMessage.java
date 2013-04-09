@@ -14,6 +14,7 @@ public class EventMessage extends TerminusMessage
 	protected int eventType;
 	protected Date timestamp;
 	protected int priority;
+	protected byte[] data;
 
 	public EventMessage()
 	{ 
@@ -51,6 +52,16 @@ public class EventMessage extends TerminusMessage
 	public void setPrority(int p)
 	{
 		this.priority = p;
+	}
+	
+	public byte[] getData()
+	{
+		return this.data;
+	}
+	
+	public void setData(byte[] d)
+	{
+		this.data = d;
 	}
 	
 }

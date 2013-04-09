@@ -9,6 +9,7 @@ import org.opencv.android.LoaderCallbackInterface;
 import org.opencv.android.OpenCVLoader;
 import org.opencv.core.Core;
 import org.opencv.core.Mat;
+import org.opencv.core.MatOfByte;
 import org.opencv.core.MatOfPoint;
 import org.opencv.core.Scalar;
 import org.opencv.core.Rect;
@@ -18,6 +19,7 @@ import org.opencv.android.CameraBridgeViewBase;
 import org.opencv.android.CameraBridgeViewBase.CvCameraViewListener2;
 
 import org.opencv.video.BackgroundSubtractorMOG;
+import org.opencv.highgui.Highgui;
 import org.opencv.imgproc.Imgproc;
 
 import android.app.Activity;
@@ -29,7 +31,7 @@ import edu.buffalo.cse.terminus.client.TerminusController;
 
 public class CameraOpenCVAlgo extends CameraAlgo implements CvCameraViewListener2
 {
-	public static final int CONTOUR_AREA_THRESH = 1200;
+	public static final int CONTOUR_AREA_THRESH = 1600;
 	
 	private CameraBridgeViewBase mOpenCvCameraView;
 	
@@ -37,6 +39,7 @@ public class CameraOpenCVAlgo extends CameraAlgo implements CvCameraViewListener
     private BackgroundSubtractorMOG mogBgSub;
     
     private Mat mGray;
+    private Mat mGrayBox;
     private Mat mRgba;
 	private Mat mRgb;
 	private Mat mFGMask;
@@ -44,12 +47,16 @@ public class CameraOpenCVAlgo extends CameraAlgo implements CvCameraViewListener
 	private List<MatOfPoint> contours;
 	private Scalar CONTOUR_COLOR;
 	private Size ksize;
+	
+	private boolean hadMotionLastFrame;
     
     private BaseLoaderCallback mLoaderCallback;
     
 	public CameraOpenCVAlgo(TerminusController c, Activity t) 
 	{
 		super(c, t);
+		
+		hadMotionLastFrame = false;
 		
         mOpenCvCameraView = (CameraBridgeViewBase) activity.findViewById(R.id.cameraPlaceholder);
         
@@ -71,6 +78,7 @@ public class CameraOpenCVAlgo extends CameraAlgo implements CvCameraViewListener
 		                    // need to tweak these
 		                  //learningRate 	= .05;
 		                    learningRate	= .1;
+		                    
 		                  //mogBgSub 		= new BackgroundSubtractorMOG();
 		                    mogBgSub 		= new BackgroundSubtractorMOG(3, 4, 0.8);
 		                        
@@ -81,7 +89,8 @@ public class CameraOpenCVAlgo extends CameraAlgo implements CvCameraViewListener
 		                    mRgb 			= new Mat();
 		                    mFGMask			= new Mat();
 		                    
-		                    ksize			= new Size(25,25);
+		                    // tried 25... 35 is best for now
+		                    ksize			= new Size(35,35);
 		                    
 		                    // for contours
 		                    mHierarchy  	= new Mat();
@@ -144,8 +153,9 @@ public class CameraOpenCVAlgo extends CameraAlgo implements CvCameraViewListener
 
 	public Mat onCameraFrame(CvCameraViewFrame inputFrame) {
 	
-		mRgba = inputFrame.rgba();
-    	mGray = inputFrame.gray();
+		mRgba 		= inputFrame.rgba();
+    	mGray 		= inputFrame.gray();
+    	mGrayBox	= mGray.clone();
     	
     	// 6.2 fps here
     	
@@ -165,18 +175,14 @@ public class CameraOpenCVAlgo extends CameraAlgo implements CvCameraViewListener
 		// blur the fgmask to reduce the number of contours
         Imgproc.GaussianBlur(mFGMask, mFGMask, ksize, 0);
 		
-		// debug
-		//if(true) return mRgb;
-		//if(true) return mFGMask;
-		
 		// re-init or the old contours will stay on screen 
 		contours = new ArrayList<MatOfPoint>();
 		
 		if (!mFGMask.empty()) {
 			Imgproc.findContours(mFGMask, contours, mHierarchy, Imgproc.RETR_EXTERNAL, Imgproc.CHAIN_APPROX_SIMPLE);
 			
-			// will draw the outlines on the regions - debug
-			//Imgproc.drawContours(mRgba, contours, -1, CONTOUR_COLOR, 3);
+			// will draw the outlines on the regions
+			//Imgproc.drawContours(mGrayBox, contours, -1, CONTOUR_COLOR, 3);
 			
 			boolean motion = false;
 			
@@ -187,7 +193,8 @@ public class CameraOpenCVAlgo extends CameraAlgo implements CvCameraViewListener
 				if(r.area() > CONTOUR_AREA_THRESH) {
 					// draw a rectangle around any contour with area greater
 					// than threshold
-					Core.rectangle(mRgba, r.tl(), r.br(), CONTOUR_COLOR, 3);
+					//Core.rectangle(mRgba, r.tl(), r.br(), CONTOUR_COLOR, 2);
+					Core.rectangle(mGrayBox, r.tl(), r.br(), CONTOUR_COLOR, 2);
 					
 					// we have motion!
 					motion = true;
@@ -197,8 +204,21 @@ public class CameraOpenCVAlgo extends CameraAlgo implements CvCameraViewListener
 			// one event per frame, at most
 			if(motion) {
 				if(controller != null ) {
-					controller.onCameraMotionDetected();
+					hadMotionLastFrame  = true;
+					MatOfByte matOfByte = new MatOfByte();
+			        Highgui.imencode(".png", mGrayBox, matOfByte);
+			        byte[] imageBytes = matOfByte.toArray();
+					controller.onCameraMotionDetected(imageBytes);
+					
 				}
+			} else if(hadMotionLastFrame) {
+				hadMotionLastFrame = false;
+				
+				// send a clean "unboxed" image
+				MatOfByte matOfByte = new MatOfByte();
+		        Highgui.imencode(".png", mGray, matOfByte);
+		        byte[] imageBytes = matOfByte.toArray();
+				controller.onCameraMotionDetected(imageBytes);
 			}
 		}
 		return mRgba;

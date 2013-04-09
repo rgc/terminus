@@ -1,22 +1,19 @@
 package edu.buffalo.cse.terminus.client.sensors;
 
-import android.app.Activity;
+import android.app.Fragment;
 import edu.buffalo.cse.terminus.client.TerminusController;
 
-public abstract class CameraAlgo 
+public abstract class CameraAlgo extends Fragment
 {
 	TerminusController controller;
-	Activity activity;
 	
-	public CameraAlgo(TerminusController c, Activity t)
+	public void setController(TerminusController c)
 	{
-		controller = c;
-		activity   = t;
+		this.controller = c;
 	}
-	public abstract void setController(TerminusController c);
-	public abstract void onMotionDetected();
-	public abstract void startAlgo();
-	public abstract void pauseAlgo();
-	public abstract void resumeAlgo();
-	public abstract void stopAlgo();
+	
+	//public abstract void startAlgo();
+	//public abstract void pauseAlgo();
+	//public abstract void resumeAlgo();
+	//public abstract void stopAlgo();
 }

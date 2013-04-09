@@ -62,7 +62,6 @@ public class SettingsActivity extends Activity
 		switch (settings.cameraOption)
 		{
 		
-		/*
 		case TerminusSettings.CAMERA_NATIVE:
 			selected = R.id.cameraRadioNative;
 			break;
@@ -70,7 +69,6 @@ public class SettingsActivity extends Activity
 		case TerminusSettings.CAMERA_LOWLEVEL:
 			selected = R.id.cameraRadioLowlevel;
 			break;
-		*/
 		
 		case TerminusSettings.CAMERA_JAVA:
 			selected = R.id.cameraRadioJava;
@@ -195,7 +193,6 @@ public class SettingsActivity extends Activity
 		switch (selected)
 		{
 		
-		/*
 		case R.id.cameraRadioNative:
 			settings.cameraOption = TerminusSettings.CAMERA_NATIVE;
 			break;
@@ -203,7 +200,6 @@ public class SettingsActivity extends Activity
 		case R.id.cameraRadioLowlevel:
 			settings.cameraOption = TerminusSettings.CAMERA_LOWLEVEL;
 			break;
-		*/
 		
 		case R.id.cameraRadioJava:
 			settings.cameraOption = TerminusSettings.CAMERA_JAVA;

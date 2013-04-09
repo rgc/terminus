@@ -9,6 +9,8 @@ import edu.buffalo.cse.terminus.client.network.INetworkCallbacks;
 import edu.buffalo.cse.terminus.messages.RegistrationResponse;
 import edu.buffalo.cse.terminus.messages.TerminusMessage;
 import android.app.Activity;
+import android.app.FragmentManager;
+import android.app.FragmentTransaction;
 import android.content.Intent;
 import android.graphics.Color;
 import android.hardware.Sensor;
@@ -22,21 +24,22 @@ import android.view.WindowManager;
 import android.widget.TextView;
 
 import edu.buffalo.cse.terminus.client.sensors.CameraAlgo;
-import edu.buffalo.cse.terminus.client.sensors.CameraOpenCVAlgo;
+import edu.buffalo.cse.terminus.client.sensors.CameraOpenCVAlgoJava;
+import edu.buffalo.cse.terminus.client.sensors.CameraOpenCVAlgoNative;
 
 public class TerminusClientMainActivity extends Activity implements INetworkCallbacks, SensorEventListener
 {	
 	private TerminusController controller = null;
-    private CameraAlgo camera = null;
     private TextView tvNetwork;
 	private TextView tvSensors;
+	private CameraAlgo curCameraFrag;	//Fragment
     
 	@Override
 	protected void onCreate(Bundle savedInstanceState) 
 	{
 		super.onCreate(savedInstanceState);
 		
-		this.requestWindowFeature(Window.FEATURE_NO_TITLE);
+		//this.requestWindowFeature(Window.FEATURE_NO_TITLE);
 		setContentView(R.layout.activity_terminus_client_main);
 		getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 		
@@ -75,18 +78,49 @@ public class TerminusClientMainActivity extends Activity implements INetworkCall
 		controller = new TerminusController(settings, this, new UIEventBridge(this, this), this);
 		controller.start();
 		
+		startCamera(settings);
+		
+	}
+	
+	private void startCamera(TerminusSettings settings)
+	{
+		/*
+		 * In order to switch between different camera algorithms, we use fragments.
+		 * Each type of camera algo is a fragment
+		 */
+		
+		//First, remove the old fragment
+		FragmentManager fm = getFragmentManager();
+		FragmentTransaction ft = fm.beginTransaction();
+		
+		if (curCameraFrag != null)
+		{
+			ft.remove(curCameraFrag);
+			ft.commit();
+			ft = fm.beginTransaction();
+		}
+		
+		//Next, insert the new fragment
 		switch (settings.cameraOption)
 		{
 		case TerminusSettings.CAMERA_NATIVE:
+			curCameraFrag = new CameraOpenCVAlgoNative();
+			curCameraFrag.setController(controller);
+			ft.add(R.id.cameraPlaceholder, curCameraFrag);
+			ft.commit();
+	        break;
+	        
 		case TerminusSettings.CAMERA_JAVA:
-			camera = new CameraOpenCVAlgo(controller, this);
-	        camera.startAlgo();
+			curCameraFrag = new CameraOpenCVAlgoJava();
+			curCameraFrag.setController(controller);
+			ft.add(R.id.cameraPlaceholder, curCameraFrag);
+			ft.commit();
 	        break;
 	        
         default:
+        	ft.commit();
         	break;
 		}
-		
 	}
 	
 	private void stopSensors()
@@ -94,8 +128,15 @@ public class TerminusClientMainActivity extends Activity implements INetworkCall
 		if (controller != null)
 			controller.stop();
 		
-		if(camera != null)
-			camera.pauseAlgo();
+		if (curCameraFrag != null)
+		{
+			//This will cause the camera algo to stop
+			FragmentManager fm = getFragmentManager();
+			FragmentTransaction ft = fm.beginTransaction();
+			ft.remove(curCameraFrag);
+			ft.commit();
+			ft = fm.beginTransaction();
+		}
 	}
 	
 	@Override

@@ -115,8 +115,6 @@
 			        android:layout_height="wrap_content"
 			        android:text="@string/camera_opt_java" />
 			    
-			    <!-- We can add this back in once we are able to swap between view
-			    
 			    <RadioButton
 			        android:id="@+id/cameraRadioNative"
 			        android:layout_width="wrap_content"
@@ -129,8 +127,6 @@
 			        android:layout_height="wrap_content"
 			        android:text="@string/camera_opt_lowlevel" />
 			        
-			         -->
-			         	    
 			</RadioGroup>
 			
 			<!-- Sound Settings -->

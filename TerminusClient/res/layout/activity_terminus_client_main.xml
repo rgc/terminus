@@ -6,15 +6,13 @@
     android:orientation="vertical"
     tools:context=".TerminusClientMain" >
 	
-	<org.opencv.android.JavaCameraView
+	<FrameLayout
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1"
-        android:id="@+id/cameraPlaceholder"
-        opencv:show_fps="true"
-        opencv:camera_id="any" />
+        android:id="@+id/cameraPlaceholder" />
     
-    <LinearLayout 
+    <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
 	    android:layout_width="match_parent"
 	    android:layout_height="wrap_content"
 	    android:orientation="horizontal" >
@@ -32,6 +30,5 @@
 	        android:layout_height="wrap_content"
 	        android:layout_weight="1"
 	        android:textAppearance="?android:attr/textAppearanceMedium" />
-</LinearLayout>
-    
+	</LinearLayout>
 </LinearLayout>

@@ -22,14 +22,15 @@ import org.opencv.video.BackgroundSubtractorMOG;
 import org.opencv.highgui.Highgui;
 import org.opencv.imgproc.Imgproc;
 
-import android.app.Activity;
+import android.os.Bundle;
+import android.view.LayoutInflater;
 import android.view.SurfaceView;
+import android.view.View;
+import android.view.ViewGroup;
 
-
-import edu.buffalo.cse.terminus.client.R;
 import edu.buffalo.cse.terminus.client.TerminusController;
 
-public class CameraOpenCVAlgo extends CameraAlgo implements CvCameraViewListener2
+public abstract class CameraOpenCVAlgo extends CameraAlgo implements CvCameraViewListener2
 {
 	public static final int CONTOUR_AREA_THRESH = 1600;
 	
@@ -52,96 +53,102 @@ public class CameraOpenCVAlgo extends CameraAlgo implements CvCameraViewListener
     
     private BaseLoaderCallback mLoaderCallback;
     
-	public CameraOpenCVAlgo(TerminusController c, Activity t) 
+    /**
+     * Get the integer view id for the underlying CameraBridgeViewBase
+     * preview window
+     * @return the integer value of the CameraBridgeViewBase
+     */
+    public abstract int getBaseView();
+    
+    /**
+     * Get the integer layout id for this fragment
+     * @return the integer value of the layout found in R.layout
+     */
+    public abstract int getLayoutId();
+	
+	@Override
+	public View onCreateView(LayoutInflater inflater, ViewGroup container, 
+			Bundle savedInstanceState) 
 	{
-		super(c, t);
-		
+	    View view = inflater.inflate(getLayoutId(), container, false);
+	    
+	    return view;
+	}
+	
+	private void initCameraSettings()
+	{
 		hadMotionLastFrame = false;
 		
-        mOpenCvCameraView = (CameraBridgeViewBase) activity.findViewById(R.id.cameraPlaceholder);
+        mOpenCvCameraView = (CameraBridgeViewBase) getActivity().findViewById(getBaseView());
         
         mOpenCvCameraView.setVisibility(SurfaceView.VISIBLE);
         
         mOpenCvCameraView.setCvCameraViewListener(this);
         
         mOpenCvCameraView.setMaxFrameSize(400, 400);
-		
-		mLoaderCallback = new BaseLoaderCallback(activity) {
-		        @Override
-		        public void onManagerConnected(int status) {
-		            switch (status) {
-		                case LoaderCallbackInterface.SUCCESS:
-		                {
-		                    mOpenCvCameraView.enableView();
-		                 
-		                    // for background removal...
-		                    // need to tweak these
-		                  //learningRate 	= .05;
-		                    learningRate	= .1;
-		                    
-		                  //mogBgSub 		= new BackgroundSubtractorMOG();
-		                    mogBgSub 		= new BackgroundSubtractorMOG(3, 4, 0.8);
-		                        
-		                    // try backgroundsubtractormog2 ?
-		                    
-		                    mGray 			= new Mat();
-		                    mRgba 			= new Mat();
-		                    mRgb 			= new Mat();
-		                    mFGMask			= new Mat();
-		                    
-		                    // tried 25... 35 is best for now
-		                    ksize			= new Size(35,35);
-		                    
-		                    // for contours
-		                    mHierarchy  	= new Mat();
-		                    contours 		= new ArrayList<MatOfPoint>();
-		                    CONTOUR_COLOR 	= new Scalar(255,0,0,255);
-		                    
-		                } break;
-		                default:
-		                {
-		                    super.onManagerConnected(status);
-		                } break;
-		            }
-		        }
-		    };
-		    
+        
+		mLoaderCallback = new BaseLoaderCallback(getActivity()) {
+	        @Override
+	        public void onManagerConnected(int status) {
+	            switch (status) {
+	                case LoaderCallbackInterface.SUCCESS:
+	                {
+	                    mOpenCvCameraView.enableView();
+	                 
+	                    // for background removal...
+	                    // need to tweak these
+	                  //learningRate 	= .05;
+	                    learningRate	= .1;
+	                    
+	                  //mogBgSub 		= new BackgroundSubtractorMOG();
+	                    mogBgSub 		= new BackgroundSubtractorMOG(3, 4, 0.8);
+	                        
+	                    // try backgroundsubtractormog2 ?
+	                    
+	                    mGray 			= new Mat();
+	                    mRgba 			= new Mat();
+	                    mRgb 			= new Mat();
+	                    mFGMask			= new Mat();
+	                    
+	                    // tried 25... 35 is best for now
+	                    ksize			= new Size(35,35);
+	                    
+	                    // for contours
+	                    mHierarchy  	= new Mat();
+	                    contours 		= new ArrayList<MatOfPoint>();
+	                    CONTOUR_COLOR 	= new Scalar(255,0,0,255);
+	                    
+	                } break;
+	                default:
+	                {
+	                    super.onManagerConnected(status);
+	                } break;
+	            }
+	        }
+	    };
 	}
 	
 	@Override
-	public void setController(TerminusController c) {
+	public void setController(TerminusController c) 
+	{
 		controller = c;
 	}
 	
 	@Override
-	public void onMotionDetected() 
+	public void onResume() 
 	{
-		//this.controller.sensorEventSensed(Sensor.TYPE_LIGHT);
-	}
-
-	@Override
-	public void startAlgo() 
-	{
-		resumeAlgo();
+		super.onResume();
+		
+		initCameraSettings();
+		OpenCVLoader.initAsync(OpenCVLoader.OPENCV_VERSION_2_4_3, getActivity(), mLoaderCallback);
 	}
 	
 	@Override
-	public void pauseAlgo() 
+	public void onPause() 
 	{
-        if (mOpenCvCameraView != null)
-            mOpenCvCameraView.disableView();	
-	}
-	
-	@Override
-	public void resumeAlgo() 
-	{
-		OpenCVLoader.initAsync(OpenCVLoader.OPENCV_VERSION_2_4_3, activity, mLoaderCallback);
-	}
-	
-	@Override
-	public void stopAlgo() 
-	{
-        if (mOpenCvCameraView != null)
+		super.onPause();
+		
+		if (mOpenCvCameraView != null)
             mOpenCvCameraView.disableView();
 	}
 

@@ -8,10 +8,10 @@ import java.util.HashMap;
 public class TerminusDashboard extends JPanel {
 	private JFrame frame;
 	private JTable table;
-	private JPanel picturePanel;
+	private JDesktopPane desktop;
 	private JSplitPane splitPane;
 	private EventTableModel tableModel;
-	private HashMap<String, JLabel> nodeScreens;    	
+	private HashMap<String, NodeScreenFrame> nodeScreens;    	
 
 	public TerminusDashboard() {
 
@@ -27,15 +27,13 @@ public class TerminusDashboard extends JPanel {
 		JScrollPane tableScrollPane = new JScrollPane(table);
 		tableScrollPane.setMinimumSize(new Dimension(300, 100));
 
-		// panel to hold all pictures, give it a flow layout so it breaks
-		// as new nodes are added
-		picturePanel = new JPanel();
-		FlowLayout experimentLayout = new FlowLayout();
-		picturePanel.setLayout(experimentLayout);
-
+		desktop = new JDesktopPane();
+		desktop.setMinimumSize(new Dimension(900, 600));
+		desktop.setDragMode(JDesktopPane.OUTLINE_DRAG_MODE);
+		
 		// split pane with the two panels in it.
 		splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT,
-				tableScrollPane, picturePanel);
+				tableScrollPane, desktop);
 
 		splitPane.setOneTouchExpandable(true);
 		splitPane.setDividerLocation(300);
@@ -51,14 +49,111 @@ public class TerminusDashboard extends JPanel {
 		frame.pack();
 		frame.setVisible(true);
 
-		nodeScreens = new HashMap<String, JLabel>();
+		nodeScreens = new HashMap<String, NodeScreenFrame>();
+		
+	}
+	
+	public void addMessage(String id, String type, Date ts) {
+		tableModel.addRow(Arrays.asList(ts, type, id));
+	}
+
+	public void addUpdateImage(String nodeId, byte[] img) {
+
+		ImageIcon updatedImage = new ImageIcon(img);
+		
+		if(!nodeScreens.containsKey(nodeId)) {
+
+			NodeScreenFrame tframe = new NodeScreenFrame(nodeId);
+			tframe.setCameraScreen(img);
+		    desktop.add(tframe);
+		    tile(desktop);
+
+			nodeScreens.put(nodeId,tframe);
+
+		} else {
+			nodeScreens.get(nodeId).setCameraScreen(img);
+			nodeScreens.get(nodeId).setVisible(true);
+
+		}		
 
 	}
+	
+	public void removeNode(String nodeId) {
+		if(nodeScreens.containsKey(nodeId)) {
+			nodeScreens.get(nodeId).setVisible(false);
+		}
+	}
+	
+	public static void tile( JDesktopPane desktopPane ) {
+	    JInternalFrame[] frames = desktopPane.getAllFrames();
+	    if ( frames.length == 0) return;
+	 
+	    Rectangle dBounds = desktopPane.getBounds();
+	    
+	    int x = 0;
+	    int y = 0;
+	    
+	    for(int i = 0; i < frames.length; i++ ) {
+	    	Rectangle fbounds = frames[i].getBounds();
+	    	if(x + fbounds.width > dBounds.width) {
+	    		x  = 0;
+	    		y += fbounds.height;
+	    	}
+	    	
+	    	frames[i].setLocation(x,y);
+	    	x += fbounds.width;
+	    	
+	    }
+	    
+	    
+	}
+	
+	class NodeScreenFrame extends JInternalFrame {
+		
+		private JLabel picLabel;
+		
+		NodeScreenFrame(String nodeId) {
+			super(	nodeId,
+					false,	// resize
+					true,   // close
+					false,  // maximize
+					true);
+			
+			picLabel = new JLabel();
+			
+			this.add(picLabel);
+			this.setDefaultCloseOperation(JInternalFrame.HIDE_ON_CLOSE);
+			
+		}
+		
+		void setCameraScreen(byte[] i) {
+			ImageIcon updatedImage = new ImageIcon(i);
+			this.setCameraScreen(updatedImage);
+		}
+		
+		void setCameraScreen(ImageIcon i) {
+			picLabel.setIcon(i);
+			picLabel.revalidate();
+			picLabel.repaint();
+			
+			this.setSize(	i.getIconWidth()  + 10,
+	    			   		i.getIconHeight() + 32);
+			
+		    this.setVisible(true);
+		    
+		    try {
+	    		this.setSelected(true);
+		    } catch (java.beans.PropertyVetoException e) {}
+			
+		}
+		
+	}
+	
 
 	class EventTableModel extends AbstractTableModel {
 
-		private List<String> columnNames = new ArrayList();
-		private List<List> data = new ArrayList();
+		private List<String> columnNames 	= new ArrayList();
+		private List<List> data 			= new ArrayList();
 
 		EventTableModel() {	
 			columnNames.add("TimeStamp");
@@ -98,23 +193,6 @@ public class TerminusDashboard extends JPanel {
 		}
 
 	}
-
-	public void addMessage(String id, String type, Date ts) {
-		tableModel.addRow(Arrays.asList(ts, type, id));
-	}
-
-	public void addUpdateImage(String nodeId, byte[] img) {
-
-		if(!nodeScreens.containsKey(nodeId)) {
-			JLabel picLabel = new JLabel();
-			nodeScreens.put(nodeId,picLabel);
-			picturePanel.add(nodeScreens.get(nodeId));
-		}
-
-		nodeScreens.get(nodeId).setIcon(new ImageIcon(img));
-		picturePanel.revalidate();
-		picturePanel.repaint();
-
-	}
+	
 
 }

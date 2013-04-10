@@ -50,6 +50,7 @@ public class Terminus implements ITerminusMsgCallback
 
 			case TerminusMessage.MSG_UNREGISTER:
 				type = "Unreg";
+				dashboard.removeNode(msg.getID());
 				break;
 
 			case TerminusMessage.MSG_TEST:

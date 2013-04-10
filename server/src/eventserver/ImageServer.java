@@ -1,23 +1,23 @@
-package lowlevelserver;
+package eventserver;
 
-import java.net.*;
-import java.io.*;
+import java.io.IOException;
+import java.net.ServerSocket;
+import java.net.Socket;
 
-import eventserver.ITerminusMsgCallback;
-
+import lowlevelserver.LowLevelImageThread;
 import shared.ITerminusServer;
 import shared.ServerCloseException;
 
-public class LowLevelServer implements ITerminusServer
+public class ImageServer implements ITerminusServer
 {
-	private int acceptPort;
+	public static final int IMAGE_PORT = 34412;
+	
+	private ITerminusMsgCallback msgCallback;
 	private ServerSocket server = null;
-	private ITerminusMsgCallback callback;
-
-	public LowLevelServer(ITerminusMsgCallback c, int port)
+	
+	public ImageServer(ITerminusMsgCallback mc)
 	{
-		this.callback = c;
-		this.acceptPort = port;
+		this.msgCallback = mc;
 	}
 
 	@Override
@@ -30,7 +30,7 @@ public class LowLevelServer implements ITerminusServer
 
 		try
 		{
-			server = new ServerSocket(this.acceptPort);
+			server = new ServerSocket(IMAGE_PORT);
 		}
 		catch (IOException e)
 		{
@@ -50,15 +50,11 @@ public class LowLevelServer implements ITerminusServer
 					try
 					{
 						s = server.accept();
-						LowLevelConnection llc = new LowLevelConnection(s,
-								LowLevelServer.this.callback);
-						llc.setAddress(s.getInetAddress());
-						llc.setPort(s.getPort());
+						new Thread(new LowLevelImageThread(s, ImageServer.this.msgCallback)).start();
 					}
 					catch (IOException e)
 					{
-						// TODO: This should propagate back to UI, or just be
-						// ignored
+						// TODO: This should propagate back to UI, or just be ignored
 						return;
 					}
 				}
@@ -77,5 +73,5 @@ public class LowLevelServer implements ITerminusServer
 		{
 			// Just suppress this, we're shutting down anyways.
 		}
-	}
+	}		
 }

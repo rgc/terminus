@@ -6,6 +6,7 @@ import edu.buffalo.cse.terminus.client.sensors.ICameraCallbacks;
 import edu.buffalo.cse.terminus.client.network.INetworkCallbacks;
 import edu.buffalo.cse.terminus.client.network.TerminusConnection;
 import edu.buffalo.cse.terminus.client.sensors.*;
+import edu.buffalo.cse.terminus.lowlevel.LowLevelImageMessage;
 import edu.buffalo.cse.terminus.messages.EventMessage;
 
 public class TerminusController implements ICameraCallbacks
@@ -98,10 +99,11 @@ public class TerminusController implements ICameraCallbacks
 	
 	public void onCameraMotionDetected(byte[] imageBytes)
 	{
-		EventMessage em = connection.getMessageFactory().getEventMessage(connection.getConnectionID());
-		em.setEventType(EventMessage.EVENT_CAMERA_MOTION);
-		em.setData(imageBytes);
-		connection.sendMessage(em);
+		onCameraMotionDetected();
+		
+		LowLevelImageMessage im = new LowLevelImageMessage(connection.getConnectionID());
+		im.setImage(imageBytes);
+		connection.sendImage(im);
 	}
 	
 	public void soundEventSensed()

@@ -40,5 +40,4 @@ public class LowLevelMessageFactory implements ITerminusMessageFactory
 	{
 		return new LowLevelUnregisterMessage(id);
 	}
-	
 }

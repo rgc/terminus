@@ -14,12 +14,15 @@ import edu.buffalo.cse.terminus.messages.RegistrationResponse;
 import edu.buffalo.cse.terminus.messages.TerminusMessage;
 import edu.buffalo.cse.terminus.messages.UnregisterMessage;
 import edu.buffalo.cse.terminus.client.network.lowlevel.LowLevelClient;
+import edu.buffalo.cse.terminus.client.network.lowlevel.LowLevelImageClient;
+import edu.buffalo.cse.terminus.lowlevel.LowLevelImageMessage;
 import edu.buffalo.cse.terminus.lowlevel.LowLevelMessageFactory;
 import edu.buffalo.cse.terminus.messages.TestMessage;
 
 public class TerminusConnection implements INetworkCallbacks
 {
 	private ATerminusClient terminusClient;
+	private LowLevelImageClient imageClient;
 	private ITerminusMessageFactory messageFactory = new LowLevelMessageFactory();
 	
 	private enum ConnectionState
@@ -45,9 +48,18 @@ public class TerminusConnection implements INetworkCallbacks
 	private String eventIPAddress;
 	private int eventPort;
 	
+	/*
+	 * This indicates we clicked the disconnect button vs. losing
+	 * the network connection 
+	 */
+	private boolean hardDisconnect = false;
+	
+	public static final int IMAGE_PORT = 34412;
+	
 	public TerminusConnection(INetworkCallbacks c, Activity a) 
 	{
 		terminusClient = new LowLevelClient();
+		
 		terminusClient.setCallback(this);
 		this.callbacks = c;
 		curConnectionState = ConnectionState.Disconnected;
@@ -90,8 +102,12 @@ public class TerminusConnection implements INetworkCallbacks
 	
 	public void connect(String host, int port)
 	{
+		hardDisconnect = false;
+		
 		this.eventIPAddress = host;
 		this.eventPort = port;
+		
+		imageClient = new LowLevelImageClient(host, IMAGE_PORT);
 		
 		if (curConnectionState != ConnectionState.Disconnected)
 			return;
@@ -112,7 +128,6 @@ public class TerminusConnection implements INetworkCallbacks
 		else if (curConnectionState == ConnectionState.Disconnected || 
 				curRegistrationState == RegistrationState.Unregistered)
 		{
-			
 			this.reconnect();
 		}
 	}
@@ -124,11 +139,35 @@ public class TerminusConnection implements INetworkCallbacks
 	
 	public void sendMessage(TerminusMessage m)
 	{
-		terminusClient.sendMessage(m);
+		if (curConnectionState == ConnectionState.Connected && 
+				curRegistrationState == RegistrationState.Registered)
+		{
+			terminusClient.sendMessage(m);
+		}
+		else if (curConnectionState == ConnectionState.Disconnected || 
+				curRegistrationState == RegistrationState.Unregistered)
+		{
+			if (!hardDisconnect)
+				this.reconnect();
+		}
+	}
+	
+	public void sendImage(LowLevelImageMessage m)
+	{
+		if (imageClient != null)
+		{
+			if (curConnectionState == ConnectionState.Connected && 
+					curRegistrationState == RegistrationState.Registered)
+			{
+				imageClient.sendMessage(m);
+			}
+		}
 	}
 	
 	public void reconnect()
 	{
+		hardDisconnect = false;
+		
 		if (this.eventIPAddress == null || this.eventIPAddress.isEmpty() || 
 				this.eventPort == 0)
 		{
@@ -145,6 +184,8 @@ public class TerminusConnection implements INetworkCallbacks
 	 */
 	public void disconnect()
 	{
+		hardDisconnect = true;
+		
 		if (this.curConnectionState == ConnectionState.Connected)
 		{
 			if (this.curRegistrationState != RegistrationState.Unregistered)
@@ -159,6 +200,9 @@ public class TerminusConnection implements INetworkCallbacks
 				this.curConnectionState = ConnectionState.Disconnected;
 				terminusClient.disconnect();
 			}
+			
+			if (imageClient != null)
+				imageClient.disconnect();
 		}
 	}
 	

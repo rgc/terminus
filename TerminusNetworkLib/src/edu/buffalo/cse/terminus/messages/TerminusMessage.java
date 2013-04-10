@@ -6,6 +6,7 @@ public abstract class TerminusMessage
 	public static final int MSG_UNREGISTER = 0x2;
 	public static final int MSG_REG_RESPONSE = 0x3;
 	public static final int MSG_EVENT = 0x4;
+	public static final int MSG_IMAGE = 0x5;
 	public static final int MSG_TEST = 0xFFFF;
 	
 	/*

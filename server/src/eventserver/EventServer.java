@@ -7,7 +7,6 @@ import java.net.Socket;
 import java.net.SocketAddress;
 import java.net.SocketTimeoutException;
 import java.net.UnknownHostException;
-import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ConcurrentHashMap;
 
 import lowlevelserver.LowLevelServer;
@@ -29,19 +28,7 @@ public class EventServer implements ITerminusMsgCallback, ITerminusServer
 {
 	public static final int EVENT_PORT = 34411;
 	public static final int INTERNET_TIMEOUT = 10000;
-	
-	class QueuedMessage
-	{
-		ATerminusConnection connection;
-		TerminusMessage message;
 		
-		public QueuedMessage(ATerminusConnection c, TerminusMessage m)
-		{
-			this.connection = c;
-			this.message = m;
-		}
-	}
-	
 	/* Implementation specific communication */
 	private ITerminusServer eventCom;
 	
@@ -52,30 +39,21 @@ public class EventServer implements ITerminusMsgCallback, ITerminusServer
 	private final ITerminusMsgCallback messageCallback;
 	
 	/* 
-	 *  Queued events
-	 * 
-	 *  We have a thread whose job is to process the queued events.
-	 *  Right now everything goes into this one queue.  We could change this
-	 *  to separate out the registration requests and other higher priority
-	 *  messages.
-	 */
-	private final ConcurrentLinkedQueue<QueuedMessage> eventQueue;
-	
-	/* 
 	 * Active connections.
 	 * 
-	 * This may be useful for brocasting messages.
+	 * This may be useful for broadcasting messages.
 	 */
 	private final ConcurrentHashMap<String, ATerminusConnection> sessions;
 	
 	private String eventServerIP;
+	private ImageServer imageServer;
 	
 	public EventServer(ITerminusMsgCallback msgCallback)
 	{
 		this.messageCallback = msgCallback;
-		eventQueue = new ConcurrentLinkedQueue<QueuedMessage>();
 		sessions = new ConcurrentHashMap<String, ATerminusConnection>();
 		eventCom = new LowLevelServer(this, EVENT_PORT);
+		imageServer = new ImageServer(this);
 		//eventCom = new AkkaServer(this, EVENT_PORT);
 		messageFactory = new LowLevelMessageFactory();
 	}
@@ -94,6 +72,7 @@ public class EventServer implements ITerminusMsgCallback, ITerminusServer
 		try
 		{
 			eventServerIP = EventServer.getLocalHost().getHostAddress();
+			imageServer.start();
 		}
 		catch (SocketTimeoutException e)
 		{
@@ -116,42 +95,14 @@ public class EventServer implements ITerminusMsgCallback, ITerminusServer
 	public void stop()
 	{
 		eventCom.stop();
-
+		imageServer.stop();
+		
 		for (ATerminusConnection connection : sessions.values())
 		{
 			connection.shutdown();
 		}
 
 		sessions.clear();
-		eventQueue.clear();
-	}
-
-	private void runMessageProcThread()
-	{
-		new Thread(new Runnable()
-		{
-			@Override
-			public void run()
-			{
-				while (true)
-				{
-					if (!eventQueue.isEmpty())
-					{
-						QueuedMessage qm = eventQueue.remove();
-						EventServer.this.processMessage(qm.message, qm.connection);
-					}
-
-					try
-					{
-						Thread.sleep(5);
-					}
-					catch (InterruptedException e)
-					{
-						// Ignore
-					}
-				}
-			}
-		}).start();
 	}
 
 	private boolean isRegistered(String id)
@@ -164,8 +115,16 @@ public class EventServer implements ITerminusMsgCallback, ITerminusServer
 	
 	private void processMessage(TerminusMessage message, ATerminusConnection connection)
 	{
-		if (message == null || connection == null)
+		if (message == null)
 		{
+			return;
+		}
+		else if (connection == null)
+		{
+			if (message.getMessageType() == TerminusMessage.MSG_IMAGE)
+			{
+				processImage(message);
+			}
 			return;
 		}
 		else if (!isRegistered(message.getID()) && message.getMessageType() != TerminusMessage.MSG_REGISTER)
@@ -178,6 +137,7 @@ public class EventServer implements ITerminusMsgCallback, ITerminusServer
 			connection.sendMessage(urm);
 			return;
 		}
+		
 		
 		switch (message.getMessageType())
 		{
@@ -239,6 +199,20 @@ public class EventServer implements ITerminusMsgCallback, ITerminusServer
 		//TODO do something with the event!
 		//		Alternatively, just register all handlers for 
 		//		events to receive callbacks.
+	}
+	
+	/*
+	 * Images are a little different.  There is no connection for these messages
+	 * because the socket they were created on is closed right away.  So, we'll
+	 * look up the connection before sending it on to the UI
+	 */
+	private void processImage(TerminusMessage tm)
+	{
+		if (isRegistered(tm.getID()))
+		{
+			ATerminusConnection connection = sessions.get(tm.getID());
+			this.messageCallback.messageReceived(connection, tm);
+		}
 	}
 	
 	private void unregister(TerminusMessage message, ATerminusConnection connection)

@@ -156,23 +156,27 @@ public class LowLevelReader
 			case TerminusMessage.MSG_REGISTER:
 				m = new LowLevelRegisterMessage(id);
 				break;
-				
+
 			case TerminusMessage.MSG_UNREGISTER:
 				m = new LowLevelUnregisterMessage(id);
 				break;
-				
+
 			case TerminusMessage.MSG_REG_RESPONSE:
 				m = new LowLevelRegResponse(id);
 				break;
-			
+
 			case TerminusMessage.MSG_EVENT:
 				m = new LowLevelEventMessage(id);
 				break;
-				
+
+			case TerminusMessage.MSG_IMAGE:
+				m = new LowLevelImageMessage(id);
+				break;
+
 			case TerminusMessage.MSG_TEST:
 				m = new LowLevelTestMessage(id);
 				break;
-				
+
 			default:
 				return null;
 		}

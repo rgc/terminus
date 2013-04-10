@@ -39,11 +39,11 @@ public class Terminus implements ITerminusMsgCallback
 			return;
 		}
 
-		Date timestamp   = new Date();
-		String type		 = "Unknown";
+		Date timestamp = new Date();
+		String type = "Unknown";
 		
-		switch (msg.getMessageType()) {
-		
+		switch (msg.getMessageType()) 
+		{
 			case TerminusMessage.MSG_REGISTER:
 				type = "Reg";
 				break;
@@ -55,13 +55,13 @@ public class Terminus implements ITerminusMsgCallback
 
 			case TerminusMessage.MSG_TEST:
 				type = "Test";
-
-			break;
-
+				break;
+			
 			case TerminusMessage.MSG_EVENT:
 				EventMessage em  = (EventMessage)msg;
 
-				switch (em.getEventType()) {
+				switch (em.getEventType()) 
+				{
 					case EventMessage.EVENT_ACCELEROMETER:
 						type = "Accel";
 						break;
@@ -73,18 +73,21 @@ public class Terminus implements ITerminusMsgCallback
 						break;
 					case EventMessage.EVENT_CAMERA_MOTION:
 						type = "Camera";
-						if(em.getData() != null) {
-							System.out.println(em.getData().length);
-							dashboard.addUpdateImage(em.getID(), em.getData());
-						} else {
-							System.out.println("null image");
-						}
 						break;
 					case EventMessage.EVENT_SOUND:
 						type = "Sound";
 						break;
-						
 				} // end switch
+				break;
+				
+			case TerminusMessage.MSG_IMAGE:
+			{
+				ImageMessage im = (ImageMessage) msg;
+				System.out.println("Image Received, Size = " + String.valueOf(im.getImage().length));
+				dashboard.addUpdateImage(im.getID(), im.getImage());
+				return;
+			}
+				
 		} // end switch
 		
 		dashboard.addMessage(msg.getID(), type, timestamp);

@@ -3,7 +3,6 @@ package edu.buffalo.cse.terminus.client.network.lowlevel;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.*;
-import java.nio.ByteBuffer;
 
 import edu.buffalo.cse.terminus.client.network.ATerminusClient;
 import edu.buffalo.cse.terminus.lowlevel.ILowLevelMessage;
@@ -14,8 +13,7 @@ import edu.buffalo.cse.terminus.messages.TerminusMessage;
 public class LowLevelClient extends ATerminusClient
 {
 	private Socket socket;
-	private static final int TIMEOUT = 5000;
-	private static boolean TEST_DUPLICATE_MESSAGES = false;
+	public static final int TIMEOUT = 5000;
 	
 	private String eventIPAddress;
 	private int eventPort;
@@ -164,18 +162,7 @@ public class LowLevelClient extends ATerminusClient
 					if (b == null)
 						return;
 					
-					if (LowLevelClient.TEST_DUPLICATE_MESSAGES)
-					{
-						byte[] b2 = new byte[b.length * 2];
-						ByteBuffer bb = ByteBuffer.wrap(b2);
-						bb.put(b);
-						bb.put(b);
-						out.write(b2);
-					}
-					else
-					{
-						out.write(b);
-					}
+					out.write(b);
 					
 					if (callback != null)
 						callback.onSendComplete();

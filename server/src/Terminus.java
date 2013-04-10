@@ -7,6 +7,9 @@ import edu.buffalo.cse.terminus.messages.*;
 import shared.ATerminusConnection;
 import shared.ServerCloseException;
 
+import java.text.SimpleDateFormat;
+
+
 public class Terminus implements ITerminusMsgCallback
 {
 	private EventServer tserver;
@@ -16,7 +19,19 @@ public class Terminus implements ITerminusMsgCallback
 	{
 		this.tserver = new EventServer(this);
         dashboard = new TerminusDashboard();
-			
+        
+        /*  DEBUG
+         * 
+        for (int i = 0; i<600; i++) {
+        	dashboard.addMessage("lala" + i, "camera",new Date());
+        	try {
+        	    Thread.sleep(100);
+        	} catch(InterruptedException ex) {
+        	    Thread.currentThread().interrupt();
+        	}
+        }
+        */
+        
 		/* Start the server(s) */
 		try
 		{

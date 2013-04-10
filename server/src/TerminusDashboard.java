@@ -2,8 +2,11 @@ import java.awt.*;
 import javax.swing.*;
 import java.util.*;
 import javax.swing.table.AbstractTableModel;
+
+import java.util.Date;
 import java.util.List;
 import java.util.HashMap;
+import java.text.SimpleDateFormat;
 
 public class TerminusDashboard extends JPanel {
 	private JFrame frame;
@@ -54,7 +57,11 @@ public class TerminusDashboard extends JPanel {
 	}
 	
 	public void addMessage(String id, String type, Date ts) {
-		tableModel.addRow(Arrays.asList(ts, type, id));
+		
+        SimpleDateFormat dateFormat = new SimpleDateFormat("HH:mm:ss MM/dd/yyyy");
+		
+		tableModel.addRow(Arrays.asList(dateFormat.format(ts), type, id));
+				
 	}
 
 	public void addUpdateImage(String nodeId, byte[] img) {
@@ -152,8 +159,9 @@ public class TerminusDashboard extends JPanel {
 
 	class EventTableModel extends AbstractTableModel {
 
+		private final int MAX_EVENTS		= 100;
 		private List<String> columnNames 	= new ArrayList();
-		private List<List> data 			= new ArrayList();
+		private List<List> data 			= new Stack();
 
 		EventTableModel() {	
 			columnNames.add("TimeStamp");
@@ -164,6 +172,11 @@ public class TerminusDashboard extends JPanel {
 		public void addRow(List rowData)
 		{
 			data.add(0, rowData);
+			
+			if(data.size() > 100) {
+				data.remove(data.size()-1);
+			}
+			
 			fireTableRowsInserted(0,0);
 		}
 

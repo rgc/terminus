@@ -104,6 +104,11 @@ public class TerminusConnection implements INetworkCallbacks
 	{
 		hardDisconnect = false;
 		
+		if (host == null || host.isEmpty() || port == 0)
+		{
+			return;
+		}
+		
 		this.eventIPAddress = host;
 		this.eventPort = port;
 		
@@ -144,8 +149,7 @@ public class TerminusConnection implements INetworkCallbacks
 		{
 			terminusClient.sendMessage(m);
 		}
-		else if (curConnectionState == ConnectionState.Disconnected || 
-				curRegistrationState == RegistrationState.Unregistered)
+		else if (curConnectionState == ConnectionState.Disconnected)
 		{
 			if (!hardDisconnect)
 				this.reconnect();
@@ -175,8 +179,8 @@ public class TerminusConnection implements INetworkCallbacks
 			return;
 		}
 		
-		this.terminusClient.disconnect();
 		this.curConnectionState = ConnectionState.Reconnecting;
+		this.terminusClient.disconnect();
 	}
 	
 	/*
@@ -228,6 +232,7 @@ public class TerminusConnection implements INetworkCallbacks
 	{
 		if (callbacks != null)
 			callbacks.onConnectionError(e);
+		this.curConnectionState = ConnectionState.Disconnected;
 	}
 
 	@Override
@@ -235,6 +240,7 @@ public class TerminusConnection implements INetworkCallbacks
 	{
 		if (callbacks != null)
 			callbacks.onConnectionError(e);	
+		this.curConnectionState = ConnectionState.Disconnected;
 	}
 
 	@Override
@@ -242,6 +248,7 @@ public class TerminusConnection implements INetworkCallbacks
 	{
 		if (callbacks != null)
 			callbacks.onConnectionError(e);
+		this.curConnectionState = ConnectionState.Disconnected;
 	}
 
 	@Override
@@ -270,10 +277,12 @@ public class TerminusConnection implements INetworkCallbacks
 		 * It's possible this happened because we are in the process of disconnecting.
 		 * We only want to reconnect if that's what our current status is
 		 */
-		if (this.curConnectionState == ConnectionState.Connected)
+		if (this.curConnectionState != ConnectionState.Disconnected)
 		{
 			this.curConnectionState = ConnectionState.Disconnected;
-			reconnect();
+			
+			if (!hardDisconnect)
+				reconnect();
 		}
 	}
 

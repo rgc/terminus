@@ -30,12 +30,13 @@ public class TerminusController implements ICameraCallbacks
 		connection = new TerminusConnection(networkCallbacks, a);
 		
 		sensorManager = new TerminusSensorManager(settings, listener, this, activity);
+		//sensorManager.createSoundAlgos();
 	}
 	
 	public void start()
 	{
 		sensorManager.start();
-		
+		//sensorManager.startSoundAlgos();
 		/*
 		 * Just do some minor checking to ignore obvious errors
 		 */
@@ -49,6 +50,7 @@ public class TerminusController implements ICameraCallbacks
 	public void stop()
 	{
 		sensorManager.stop();
+		//sensorManager.stopSoundAlgos();
 		connection.disconnect();
 	}
 	
@@ -90,17 +92,6 @@ public class TerminusController implements ICameraCallbacks
 		}
 	}
 	
-	public void soundEventSensed(int pri){
-		TotPriority+=pri;
-		
-		if(TotPriority >settings.PriorityLimit){
-			EventMessage em = connection.getMessageFactory().getEventMessage(connection.getConnectionID());
-			em.setEventType(EventMessage.EVENT_SOUND);
-			em.setPrority(TotPriority);
-			connection.sendMessage(em);
-		}
-	}
-	
 	public void onCameraMotionDetected()
 	{
 		EventMessage em = connection.getMessageFactory().getEventMessage(connection.getConnectionID());
@@ -117,8 +108,14 @@ public class TerminusController implements ICameraCallbacks
 		connection.sendImage(im);
 	}
 	
-	public void soundEventSensed()
-	{
+	public void soundEventSensed(int pri){
+		TotPriority+=pri;
 		
+		if(TotPriority >settings.PriorityLimit){
+			EventMessage em = connection.getMessageFactory().getEventMessage(connection.getConnectionID());
+			em.setEventType(EventMessage.EVENT_SOUND);
+			em.setPrority(TotPriority);
+			connection.sendMessage(em);
+		}
 	}
 }

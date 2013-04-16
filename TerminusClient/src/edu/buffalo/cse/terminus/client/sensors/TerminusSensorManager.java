@@ -11,6 +11,7 @@ import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
+import android.os.Handler;
 
 public class TerminusSensorManager implements SensorEventListener 
 {	
@@ -26,7 +27,19 @@ public class TerminusSensorManager implements SensorEventListener
 	private SensorAlgo accelerometerAlgo;
 	private SensorAlgo magnetometerAlgo;
 	private SensorAlgo lightAlgo;
+	private static SoundAlgo soundAlgo;
 	
+	//used for sound sampling
+	public static Handler handler = new Handler();
+	
+	public static Runnable sampletask = new Runnable() {
+		public void run() {
+			soundAlgo.newSoundSample();
+			handler.postDelayed(sampletask, SoundAlgo.samplerate);
+		}
+	};
+
+
 	public TerminusSensorManager(TerminusSettings settings, SensorEventListener listener, 
 			TerminusController controller, Activity activity)
 	{
@@ -36,6 +49,7 @@ public class TerminusSensorManager implements SensorEventListener
 		
 		sensorManager = (SensorManager) activity.getSystemService(android.content.Context.SENSOR_SERVICE);
 		createSensorAlgos();
+		createSoundAlgos();
 	}
 	
 	private void createSensorAlgos()
@@ -62,6 +76,13 @@ public class TerminusSensorManager implements SensorEventListener
 		}
 	}
 	
+	public void createSoundAlgos(){
+		if(settings.useSound==true){
+			soundAlgo = new SoundAlgo();
+			soundAlgo.setController(controller);
+		}
+	}
+	
 	private void startSensorAlgos()
 	{
 		if (accelerometerAlgo != null)
@@ -72,6 +93,11 @@ public class TerminusSensorManager implements SensorEventListener
 		
 		if (lightAlgo != null)
 			lightAlgo.startAlgo();
+	}
+	
+	public void startSoundAlgos(){
+		if((soundAlgo != null)&&(settings.useSound==true))
+			soundAlgo.startRecording();
 	}
 	
 	private void stopSensorAlgos()
@@ -86,6 +112,11 @@ public class TerminusSensorManager implements SensorEventListener
 			lightAlgo.stopAlgo();
 	}
 	
+	public void stopSoundAlgos(){
+		if(soundAlgo != null)
+			soundAlgo.stopRecording();
+	}
+	
 	public void start()
 	{
 		/*
@@ -97,6 +128,7 @@ public class TerminusSensorManager implements SensorEventListener
 			sensorManager.registerListener(this, sensorManager.getDefaultSensor(type),SensorManager.SENSOR_DELAY_UI);	
 	    }
 		startSensorAlgos();
+		startSoundAlgos();
 	}
 	
 	public void stop()
@@ -106,6 +138,8 @@ public class TerminusSensorManager implements SensorEventListener
 		 */
 		sensorManager.unregisterListener(this);
 		stopSensorAlgos();
+		stopSoundAlgos();
+		handler.removeCallbacks(sampletask);
 	}
 	
 	@Override
@@ -123,6 +157,7 @@ public class TerminusSensorManager implements SensorEventListener
 				LightCDFAlgo.FirstLitPri = false;
 				MagCDFAlgo.FirstMagPri = false;
 				AccelCDFAlgo.FirstAclPri = false;
+				SoundAlgo.FirstSndPri = false;
 			}
 		}
 		switch (event.sensor.getType())
@@ -249,6 +284,10 @@ public class TerminusSensorManager implements SensorEventListener
 		return out;
 	}
 	
+	public static String getSoundSensitivity(){
+		return String.valueOf(SoundAlgo.SOUND_FACTOR);
+	}
+	
 	public static void setSensorSensitivity(int type, int value)
 	{	
 		switch (type)
@@ -266,5 +305,9 @@ public class TerminusSensorManager implements SensorEventListener
 			
 			break;
 		}
+	}
+	
+	public static void setSoundSensitivity(int value){
+		SoundAlgo.SOUND_FACTOR = value;
 	}
 }

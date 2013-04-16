@@ -12,13 +12,16 @@ public class SoundAlgo {
 	
 	private MediaRecorder Recorder = null;
 	public float[] slevel;
-	public static int SOUND_FACTOR=100000;
+	public static int SOUND_FACTOR=20000;
 	public static boolean FirstSndPri = false;
+	public static int samplerate = 1;
+	
+	public static double sound;
 	
 	private long[] time;
-	private float t;
+	private double t;
 	
-	TerminusController controller;
+	private TerminusController controller;
 	
 	public void setController(TerminusController c)
 	{
@@ -30,26 +33,37 @@ public class SoundAlgo {
 			startRecording();
 		
 		CDFFunctions.shifta(slevel);
+		//CDFFunctions.shifta(time);
+		
 		slevel[0]=Recorder.getMaxAmplitude();
+		//time[0] = event.timestamp;
+		
+		//t = CDFFunctions.avgt(time);
+		t=samplerate/1000;
+		t=0.001;
+		//sound = t;
 		float ds = CDFFunctions.CDF1O4(slevel, t);
+		//sound = slevel[0];
+		
 		
 		if(ds > SOUND_FACTOR)
 		{
+			sound = ds;
 			int SndPri = 0;
 			if(FirstSndPri == false){
 				FirstSndPri = true;
 				SndPri+=30;
 			}
-			SndPri+=(ds/100000);
+			SndPri+=(ds/50000);
 			this.controller.soundEventSensed(SndPri);
 		}
 	}
 	
-	private void startRecording() {
+	public void startRecording() {
 	    Recorder = new MediaRecorder();
 	    Recorder.setAudioSource(MediaRecorder.AudioSource.MIC);
 	    Recorder.setOutputFormat(MediaRecorder.OutputFormat.THREE_GPP);
-	    Recorder.setOutputFile("/sdcard/Pictures/audiorecordtest.3gp");
+	    Recorder.setOutputFile("/dev/null");
 	    Recorder.setAudioEncoder(MediaRecorder.AudioEncoder.AMR_NB);
 
 	    try {
@@ -58,14 +72,18 @@ public class SoundAlgo {
 	        
 	    }
 	    slevel = new float[5];
+	    time = new long[6];
 	    Recorder.start();
+	    TerminusSensorManager.handler.postDelayed(TerminusSensorManager.sampletask, samplerate);
 	}
 	
 	
-	private void stopRecording() {
-	    Recorder.stop();
-	    Recorder.release();
-	    Recorder = null;
-	    slevel = null;
+	public void stopRecording() {
+	    if(Recorder != null){
+			Recorder.stop();
+		    Recorder.release();
+		    Recorder = null;
+		    slevel = null;
+	    }
 	}
 }

@@ -10,6 +10,13 @@ public class CDFFunctions
 		
 		return(f);
 	}
+	
+	public static float CDF1O4(float[] a,double t){
+		float f;
+		f = (float) (((-a[4])+(8*a[3])-(8*a[1])+a[0])/(12*t));
+		
+		return(f);
+	}
 
 	//shift array
 	public static void shifta(float[] a){
@@ -17,6 +24,7 @@ public class CDFFunctions
 			a[i+1] = a[i];
 		}
 	}
+	//shift time array
 	public static void shifta(long[] a){
 		for (int i = 0; i < a.length - 1; i++) {
 			a[i+1] = a[i];

@@ -206,6 +206,8 @@ public class SettingsActivity extends Activity
 	{
 		CheckBox cb = (CheckBox) findViewById(R.id.cbSound);
 		settings.useSound = cb.isChecked();
+		//if(cb.isChecked())
+			
 	}
 	
 	private void saveCameraSettings(TerminusSettings settings)

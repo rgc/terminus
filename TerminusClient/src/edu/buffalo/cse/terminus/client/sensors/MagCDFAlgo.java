@@ -7,11 +7,13 @@ import edu.buffalo.cse.terminus.client.TerminusController;
 
 public class MagCDFAlgo extends SensorAlgo 
 {
-	public static int MAGNET_FACTOR = 20;
+	public static int MAGNET_FACTOR = 1;
 	public static boolean FirstMagPri = false;
 	
 	//raw sensor data
-	public float[] mlevel;
+	private float[] mlevel;
+	private long[] time;
+	private float t;
 	
 	public MagCDFAlgo(TerminusController c) 
 	{
@@ -25,8 +27,13 @@ public class MagCDFAlgo extends SensorAlgo
 			startAlgo();
 		
 		CDFFunctions.shifta(mlevel);
+		CDFFunctions.shifta(time);
+		
 		mlevel[0]=event.values[0];
-		float dm = Math.abs(CDFFunctions.CDF1O4(mlevel));
+		time[0] = event.timestamp;
+		
+		t = CDFFunctions.avgt(time);
+		float dm = Math.abs(CDFFunctions.CDF1O4(mlevel, t));
 		
 		if(dm > MAGNET_FACTOR)
 		{
@@ -44,6 +51,7 @@ public class MagCDFAlgo extends SensorAlgo
 	public void startAlgo() 
 	{
 		mlevel = new float[5];
+		time = new long[6];
 	}
 
 	@Override

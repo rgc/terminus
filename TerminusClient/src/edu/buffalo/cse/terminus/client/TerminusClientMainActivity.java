@@ -23,6 +23,7 @@ import android.view.Window;
 import android.view.WindowManager;
 import android.widget.TextView;
 
+import edu.buffalo.cse.terminus.client.sensors.AccelCDFAlgo;
 import edu.buffalo.cse.terminus.client.sensors.CameraAlgo;
 import edu.buffalo.cse.terminus.client.sensors.CameraOpenCVAlgoJava;
 import edu.buffalo.cse.terminus.client.sensors.CameraOpenCVAlgoNative;

@@ -10,8 +10,11 @@ public class LightCDFAlgo extends SensorAlgo
 	public static int LIGHT_FACTOR = 1;
 	public static boolean FirstLitPri = false;
 	
+	
 	//raw sensor data
 	public float[] llevel;
+	private long[] time;
+	public static float t;
 	
 	public LightCDFAlgo(TerminusController c) 
 	{
@@ -25,7 +28,12 @@ public class LightCDFAlgo extends SensorAlgo
 			startAlgo();
 		
 		CDFFunctions.shifta(llevel);
+		CDFFunctions.shifta(time);
+		
 		llevel[0] = event.values[0];
+		time[0] = event.timestamp;
+		
+		t = CDFFunctions.avgt(time);
 		float dl = Math.abs(llevel[0] - llevel[1]);
 		
 		
@@ -45,6 +53,7 @@ public class LightCDFAlgo extends SensorAlgo
 	public void startAlgo() 
 	{
 		llevel = new float[5];
+		time = new long[6];
 	}
 
 	@Override

@@ -90,6 +90,17 @@ public class TerminusController implements ICameraCallbacks
 		}
 	}
 	
+	public void soundEventSensed(int pri){
+		TotPriority+=pri;
+		
+		if(TotPriority >settings.PriorityLimit){
+			EventMessage em = connection.getMessageFactory().getEventMessage(connection.getConnectionID());
+			em.setEventType(EventMessage.EVENT_SOUND);
+			em.setPrority(TotPriority);
+			connection.sendMessage(em);
+		}
+	}
+	
 	public void onCameraMotionDetected()
 	{
 		EventMessage em = connection.getMessageFactory().getEventMessage(connection.getConnectionID());

@@ -7,13 +7,15 @@ import edu.buffalo.cse.terminus.client.TerminusController;
 
 public class AccelCDFAlgo extends SensorAlgo 
 {
-	public static int VIBRATION_FACTOR = 20;
+	public static int VIBRATION_FACTOR = 1;
 	public static boolean FirstAclPri = false;
 	
 	//raw sensor data
 	private float[] xacel;
 	private float[] yacel;
 	private float[] zacel;
+	private long[] time;
+	public static float t;
 	
 	public AccelCDFAlgo(TerminusController c) 
 	{
@@ -31,16 +33,19 @@ public class AccelCDFAlgo extends SensorAlgo
 		CDFFunctions.shifta(xacel);
 		CDFFunctions.shifta(yacel);
 		CDFFunctions.shifta(zacel);
+		CDFFunctions.shifta(time);
 		
 		//assign values
 		xacel[0] = event.values[0];
 		yacel[0] = event.values[1];
 		zacel[0] = event.values[2];
+		time[0] = event.timestamp;
 		
+		t = CDFFunctions.avgt(time);
 		//find derivative
-		float dx = CDFFunctions.CDF1O4(xacel);
-		float dy = CDFFunctions.CDF1O4(yacel);
-		float dz = CDFFunctions.CDF1O4(zacel);
+		float dx = CDFFunctions.CDF1O4(xacel, t);
+		float dy = CDFFunctions.CDF1O4(yacel, t);
+		float dz = CDFFunctions.CDF1O4(zacel, t);
 
 		//check for large change in some direction
 		if((dx > VIBRATION_FACTOR)||(dy > VIBRATION_FACTOR)||(dz > VIBRATION_FACTOR))
@@ -65,6 +70,7 @@ public class AccelCDFAlgo extends SensorAlgo
 		xacel = new float[5];
 		yacel = new float[5];
 		zacel = new float[5];
+		time = new long[6];
 	}
 
 	@Override

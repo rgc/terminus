@@ -123,6 +123,13 @@ public class LowLevelClient extends ATerminusClient
 	@Override
 	public void disconnect()
 	{
+		if (socket == null)
+		{
+			if (callback != null)
+				callback.onDisconnectComplete();
+			return;
+		}
+		
 		new Thread(new Runnable()
 		{
 			@Override

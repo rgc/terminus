@@ -152,6 +152,19 @@
 			    android:layout_height="wrap_content"
 			    android:text="@string/sound_opt" />
 			
+			<EditText
+				android:id="@+id/soundSens"
+				android:layout_width="fill_parent"
+				android:layout_height="wrap_content"
+				android:layout_marginBottom="20dp"
+		     	android:hint="@string/sound_sensitivity" />
+			
+			<EditText
+				android:id="@+id/soundInterval"
+				android:layout_width="fill_parent"
+				android:layout_height="wrap_content"
+				android:layout_marginBottom="20dp"
+		     	android:hint="@string/sound_inter" />
 			
 			<!-- Sensors -->
 			

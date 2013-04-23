@@ -33,7 +33,7 @@ public class MagCDFAlgo extends SensorAlgo
 		time[0] = event.timestamp;
 		
 		t = CDFFunctions.avgt(time);
-		float dm = Math.abs(CDFFunctions.CDF1O4(mlevel, t));
+		float dm = Math.abs(CDFFunctions.CDF1O8(mlevel, t));
 		
 		if(dm > MAGNET_FACTOR)
 		{
@@ -50,8 +50,8 @@ public class MagCDFAlgo extends SensorAlgo
 	@Override
 	public void startAlgo() 
 	{
-		mlevel = new float[5];
-		time = new long[6];
+		mlevel = new float[9];
+		time = new long[10];
 	}
 
 	@Override

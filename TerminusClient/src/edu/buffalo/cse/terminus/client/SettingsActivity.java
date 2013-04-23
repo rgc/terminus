@@ -101,6 +101,10 @@ public class SettingsActivity extends Activity
 			CheckBox cb = (CheckBox) findViewById(R.id.cbSound);
 			cb.setChecked(true);
 		}
+		EditText et = (EditText) findViewById(R.id.soundSens);
+		et.setText(TerminusSensorManager.getSoundSensitivity());
+		et = (EditText) findViewById(R.id.soundInterval);
+		et.setText(TerminusSensorManager.getSoundInterval());
 	}
 	
 	private void loadSensorSettings(TerminusSettings settings)
@@ -206,6 +210,10 @@ public class SettingsActivity extends Activity
 	{
 		CheckBox cb = (CheckBox) findViewById(R.id.cbSound);
 		settings.useSound = cb.isChecked();
+		EditText et = (EditText) findViewById(R.id.soundSens);
+		TerminusSensorManager.setSoundSensitivity(Integer.valueOf(et.getText().toString()));
+		et = (EditText) findViewById(R.id.soundInterval);
+		TerminusSensorManager.setSoundInterval(Integer.valueOf(et.getText().toString()));
 		//if(cb.isChecked())
 			
 	}

@@ -288,6 +288,10 @@ public class TerminusSensorManager implements SensorEventListener
 		return String.valueOf(SoundAlgo.SOUND_FACTOR);
 	}
 	
+	public static String getSoundInterval(){
+		return String.valueOf(SoundAlgo.samplerate);
+	}
+	
 	public static void setSensorSensitivity(int type, int value)
 	{	
 		switch (type)
@@ -309,5 +313,9 @@ public class TerminusSensorManager implements SensorEventListener
 	
 	public static void setSoundSensitivity(int value){
 		SoundAlgo.SOUND_FACTOR = value;
+	}
+	
+	public static void setSoundInterval(int value){
+		SoundAlgo.samplerate = value;
 	}
 }

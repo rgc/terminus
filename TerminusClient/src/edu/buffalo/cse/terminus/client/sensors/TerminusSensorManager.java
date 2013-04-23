@@ -151,6 +151,19 @@ public class TerminusSensorManager implements SensorEventListener
 	@Override
 	public void onSensorChanged(SensorEvent event) 
 	{	
+		boolean send = false;
+		for(int i=0;i<controller.PriorityLevels.length;i++){
+			if(controller.TotPriority<=(settings.PriorityLimit*i)){
+				if(controller.PriorityLevels[i]==true){
+					controller.PriorityLevels[i]=false;
+					send=true;
+				}
+			}
+		}
+		if(send==true){
+			//TODO send message since priority level changed
+		}
+		
 		if(controller.TotPriority > 0){
 			controller.TotPriority-=1;
 			if(controller.TotPriority == 0){

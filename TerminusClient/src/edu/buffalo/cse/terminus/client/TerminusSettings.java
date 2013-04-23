@@ -32,7 +32,7 @@ public class TerminusSettings
 	public int cameraOption = CAMERA_JAVA;
 	public boolean useSound = false;
 	public ArrayList<Integer> sensorList = new ArrayList<Integer>();
-	public int PriorityLimit = 0;
+	public int PriorityLimit = 1;
 	
 	public void retrieve(Context c)
 	{

@@ -20,6 +20,8 @@ public class TerminusController implements ICameraCallbacks
 	private TerminusClientMainActivity activity;
 	
 	public int TotPriority=0;
+	//priority level 0 is total priority 0
+	public boolean[] PriorityLevels = new boolean[10];
 	
 	public TerminusController(TerminusSettings settings, SensorEventListener listener, 
 			INetworkCallbacks networkCallbacks, TerminusClientMainActivity a)
@@ -45,6 +47,9 @@ public class TerminusController implements ICameraCallbacks
 		{
 			connection.connect(settings.ipAddress, settings.port);
 		}
+		
+		for(int i=0;i<PriorityLevels.length;i++)
+			PriorityLevels[i]=false;
 	}
 	
 	public void stop()
@@ -66,25 +71,33 @@ public class TerminusController implements ICameraCallbacks
 	
 	public void sensorEventSensed(int type,int pri)
 	{
+		boolean send = false;
 		TotPriority+=pri;
-		
-		/* Convert to Terminus Message event types */
-		int eventType = 0;
-		
-		switch (type)
-		{
-		case Sensor.TYPE_ACCELEROMETER:
-			eventType = EventMessage.EVENT_ACCELEROMETER;
-			break;
-		case Sensor.TYPE_MAGNETIC_FIELD:
-			eventType = EventMessage.EVENT_MAGNETOMETER;
-			break;
-		case Sensor.TYPE_LIGHT:
-			eventType = EventMessage.EVENT_LIGHT;
-			break;
+		for(int i=0;i<PriorityLevels.length;i++){
+			if(TotPriority>(settings.PriorityLimit*i)){
+				if(PriorityLevels[i]==false){
+					PriorityLevels[i]=true;
+					send=true;
+				}
+			}
 		}
-		
-		if(TotPriority >settings.PriorityLimit){
+		if(send==true){
+			/* Convert to Terminus Message event types */
+			int eventType = 0;
+			
+			switch (type)
+			{
+			case Sensor.TYPE_ACCELEROMETER:
+				eventType = EventMessage.EVENT_ACCELEROMETER;
+				break;
+			case Sensor.TYPE_MAGNETIC_FIELD:
+				eventType = EventMessage.EVENT_MAGNETOMETER;
+				break;
+			case Sensor.TYPE_LIGHT:
+				eventType = EventMessage.EVENT_LIGHT;
+				break;
+			}
+			
 			EventMessage em = connection.getMessageFactory().getEventMessage(connection.getConnectionID());
 			em.setEventType(eventType);
 			em.setPrority(TotPriority);
@@ -109,9 +122,17 @@ public class TerminusController implements ICameraCallbacks
 	}
 	
 	public void soundEventSensed(int pri){
+		boolean send = false;
 		TotPriority+=pri;
-		
-		if(TotPriority >settings.PriorityLimit){
+		for(int i=0;i<PriorityLevels.length;i++){
+			if(TotPriority>(settings.PriorityLimit*i)){
+				if(PriorityLevels[i]==false){
+					PriorityLevels[i]=true;
+					send=true;
+				}
+			}
+		}
+		if(send==true){
 			EventMessage em = connection.getMessageFactory().getEventMessage(connection.getConnectionID());
 			em.setEventType(EventMessage.EVENT_SOUND);
 			em.setPrority(TotPriority);

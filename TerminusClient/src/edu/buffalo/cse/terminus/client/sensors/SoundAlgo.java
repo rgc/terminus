@@ -17,7 +17,7 @@ public class SoundAlgo {
 	private boolean FirstSndPri = false;
 	public static double sound;
 	
-	private long[] time;
+	//private long[] time;
 	private double t;
 	
 	private TerminusController controller;
@@ -38,10 +38,11 @@ public class SoundAlgo {
 		//time[0] = event.timestamp;
 		
 		//t = CDFFunctions.avgt(time);
-		t=samplerate/1000;
-		t=0.001;
+		t=samplerate;
+		t/=1000;
+		//t=0.001;
 		//sound = t;
-		float ds = CDFFunctions.CDF1O4(slevel, t);
+		float ds = CDFFunctions.CDF1O8(slevel, t);
 		//sound = slevel[0];
 		
 		
@@ -75,8 +76,8 @@ public class SoundAlgo {
 	    } catch (IOException e) {
 	        
 	    }
-	    slevel = new float[5];
-	    time = new long[6];
+	    slevel = new float[9];
+	    //time = new long[6];
 	    Recorder.start();
 	    TerminusSensorManager.handler.postDelayed(TerminusSensorManager.sampletask, samplerate);
 	}

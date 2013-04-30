@@ -29,10 +29,13 @@ public class TerminusController implements ICameraCallbacks
 	
 	private static final int NUM_TOTALS = 5;
 	private int sensorTotals[] = new int[NUM_TOTALS];
-	
+    
 	private static final int DUTY_CYCLE_INTERVAL = 1000;
 	private static final int START_DELAY = 5000;
 	private Lock cycleLock;
+    
+	//priority level 0 is total priority 0
+	public boolean[] PriorityLevels = new boolean[10];
 	
 	public TerminusController(TerminusSettings settings, SensorEventListener listener, 
 			INetworkCallbacks networkCallbacks, TerminusClientMainActivity a)
@@ -63,6 +66,9 @@ public class TerminusController implements ICameraCallbacks
 		{
 			connection.connect(settings.ipAddress, settings.port);
 		}
+		
+		for(int i=0;i<PriorityLevels.length;i++)
+			PriorityLevels[i]=false;
 	}
 	
 	public void stop()
@@ -180,6 +186,41 @@ public class TerminusController implements ICameraCallbacks
 		}
 		
 		updateTotals(totalType, pri);
+        
+        /*
+		boolean send = false;
+		TotPriority+=pri;
+		for(int i=0;i<PriorityLevels.length;i++){
+			if(TotPriority>(settings.PriorityLimit*i)){
+				if(PriorityLevels[i]==false){
+					PriorityLevels[i]=true;
+					send=true;
+				}
+			}
+		}
+		if(send==true){
+			// Convert to Terminus Message event types
+			int eventType = 0;
+			
+			switch (type)
+			{
+			case Sensor.TYPE_ACCELEROMETER:
+				eventType = EventMessage.EVENT_ACCELEROMETER;
+				break;
+			case Sensor.TYPE_MAGNETIC_FIELD:
+				eventType = EventMessage.EVENT_MAGNETOMETER;
+				break;
+			case Sensor.TYPE_LIGHT:
+				eventType = EventMessage.EVENT_LIGHT;
+				break;
+			}
+			
+			EventMessage em = connection.getMessageFactory().getEventMessage(connection.getConnectionID());
+			em.setEventType(eventType);
+			em.setPrority(TotPriority);
+			connection.sendMessage(em);
+		}
+        */
 	}
 	
 	public void onCameraMotionDetected()
@@ -199,5 +240,24 @@ public class TerminusController implements ICameraCallbacks
 	public void soundEventSensed(int pri)
 	{
 		updateTotals(SOUND_TOTALS, pri);
+        
+        /*
+		boolean send = false;
+		TotPriority+=pri;
+		for(int i=0;i<PriorityLevels.length;i++){
+			if(TotPriority>(settings.PriorityLimit*i)){
+				if(PriorityLevels[i]==false){
+					PriorityLevels[i]=true;
+					send=true;
+				}
+			}
+		}
+		if(send==true){
+			EventMessage em = connection.getMessageFactory().getEventMessage(connection.getConnectionID());
+			em.setEventType(EventMessage.EVENT_SOUND);
+			em.setPrority(TotPriority);
+			connection.sendMessage(em);
+		}
+        */
 	}
 }

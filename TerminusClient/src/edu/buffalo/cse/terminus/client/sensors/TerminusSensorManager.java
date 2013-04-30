@@ -168,6 +168,31 @@ public class TerminusSensorManager implements SensorEventListener
 	@Override
 	public void onSensorChanged(SensorEvent event) 
 	{
+        /*
+		boolean send = false;
+		for(int i=0;i<controller.PriorityLevels.length;i++){
+			if(controller.TotPriority<=(settings.PriorityLimit*i)){
+				if(controller.PriorityLevels[i]==true){
+					controller.PriorityLevels[i]=false;
+					send=true;
+				}
+			}
+		}
+		if(send==true){
+			//TODO send message since priority level changed
+		}
+		
+		if(controller.TotPriority > 0){
+			controller.TotPriority-=1;
+			if(controller.TotPriority == 0){
+				LightCDFAlgo.FirstLitPri = false;
+				MagCDFAlgo.FirstMagPri = false;
+				AccelCDFAlgo.FirstAclPri = false;
+				SoundAlgo.FirstSndPri = false;
+			}
+		}
+        */
+        
 		switch (event.sensor.getType())
 		{
 		case Sensor.TYPE_ACCELEROMETER:
@@ -298,6 +323,10 @@ public class TerminusSensorManager implements SensorEventListener
 		return String.valueOf(SoundAlgo.SOUND_FACTOR);
 	}
 	
+	public static String getSoundInterval(){
+		return String.valueOf(SoundAlgo.samplerate);
+	}
+	
 	public static void setSensorSensitivity(int type, int value)
 	{	
 		switch (type)
@@ -319,5 +348,9 @@ public class TerminusSensorManager implements SensorEventListener
 	
 	public static void setSoundSensitivity(int value){
 		SoundAlgo.SOUND_FACTOR = value;
+	}
+	
+	public static void setSoundInterval(int value){
+		SoundAlgo.samplerate = value;
 	}
 }

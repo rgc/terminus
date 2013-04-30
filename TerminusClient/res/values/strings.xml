@@ -23,6 +23,8 @@
 	<string name="camera_opt_lowlevel">Low Level Camera</string>
 	
 	<string name="sound_opt">Use Audio Monitoring</string>
+	<string name="sound_sensitivity">Sound Sensitivity</string>
+	<string name="sound_inter">Sample Interval(ms)</string>
 	
 	<string name="hint_priority">Minimum Priority</string>
 </resources>

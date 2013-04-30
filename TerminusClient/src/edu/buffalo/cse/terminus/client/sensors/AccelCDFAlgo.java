@@ -42,9 +42,9 @@ public class AccelCDFAlgo extends SensorAlgo
 		
 		t = CDFFunctions.avgt(time);
 		//find derivative
-		float dx = CDFFunctions.CDF1O4(xacel, t);
-		float dy = CDFFunctions.CDF1O4(yacel, t);
-		float dz = CDFFunctions.CDF1O4(zacel, t);
+		float dx = CDFFunctions.CDF1O8(xacel, t);
+		float dy = CDFFunctions.CDF1O8(yacel, t);
+		float dz = CDFFunctions.CDF1O8(zacel, t);
 
 		//check for large change in some direction
 		if((dx > VIBRATION_FACTOR)||(dy > VIBRATION_FACTOR)||(dz > VIBRATION_FACTOR))
@@ -66,10 +66,10 @@ public class AccelCDFAlgo extends SensorAlgo
 	@Override
 	public void startAlgo() 
 	{
-		xacel = new float[5];
-		yacel = new float[5];
-		zacel = new float[5];
-		time = new long[6];
+		xacel = new float[9];
+		yacel = new float[9];
+		zacel = new float[9];
+		time = new long[10];
 	}
 
 	@Override

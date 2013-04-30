@@ -12,6 +12,7 @@ import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.os.Handler;
+import android.util.Log;
 
 public class TerminusSensorManager implements SensorEventListener 
 {	
@@ -112,7 +113,23 @@ public class TerminusSensorManager implements SensorEventListener
 			lightAlgo.stopAlgo();
 	}
 	
-	public void stopSoundAlgos(){
+	public void clearSensorsPriority()
+	{
+		if (accelerometerAlgo != null)
+			accelerometerAlgo.clearPriority();
+		
+		if (magnetometerAlgo != null)
+			magnetometerAlgo.clearPriority();
+		
+		if (lightAlgo != null)
+			lightAlgo.clearPriority();
+		
+		if(soundAlgo != null)
+			soundAlgo.clearPriority();
+	}
+	
+	public void stopSoundAlgos()
+	{
 		if(soundAlgo != null)
 			soundAlgo.stopRecording();
 	}
@@ -150,16 +167,7 @@ public class TerminusSensorManager implements SensorEventListener
 
 	@Override
 	public void onSensorChanged(SensorEvent event) 
-	{	
-		if(controller.TotPriority > 0){
-			controller.TotPriority-=1;
-			if(controller.TotPriority == 0){
-				LightCDFAlgo.FirstLitPri = false;
-				MagCDFAlgo.FirstMagPri = false;
-				AccelCDFAlgo.FirstAclPri = false;
-				SoundAlgo.FirstSndPri = false;
-			}
-		}
+	{
 		switch (event.sensor.getType())
 		{
 		case Sensor.TYPE_ACCELEROMETER:
@@ -213,6 +221,8 @@ public class TerminusSensorManager implements SensorEventListener
 		SensorManager sm = (SensorManager) context.getSystemService(Activity.SENSOR_SERVICE);
 		List<Sensor> sensors = sm.getSensorList(Sensor.TYPE_ALL);
 		ArrayList<Integer> supported = new ArrayList<Integer>();
+		
+		
 		
 		for (Sensor s : sensors)
 		{

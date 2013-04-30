@@ -8,8 +8,6 @@ import edu.buffalo.cse.terminus.client.TerminusController;
 public class LightCDFAlgo extends SensorAlgo 
 {
 	public static int LIGHT_FACTOR = 1;
-	public static boolean FirstLitPri = false;
-	
 	
 	//raw sensor data
 	public float[] llevel;
@@ -40,8 +38,8 @@ public class LightCDFAlgo extends SensorAlgo
 		if(dl > LIGHT_FACTOR)
 		{
 			int LitPri = 0;
-			if(FirstLitPri == false){
-				FirstLitPri = true;
+			if(firstPriority == false){
+				firstPriority = true;
 				LitPri+=50;
 			}
 			LitPri+=dl;

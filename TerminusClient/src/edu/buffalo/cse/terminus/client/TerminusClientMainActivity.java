@@ -255,7 +255,7 @@ public class TerminusClientMainActivity extends Activity implements INetworkCall
 	@Override
 	public void onSensorChanged(SensorEvent event) 
 	{
-		String t = String.valueOf(controller.TotPriority);
+		String t = String.valueOf(controller.getTotalPriority());
 		
 		switch (event.sensor.getType())
 		{

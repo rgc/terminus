@@ -47,7 +47,7 @@ public class EventMessage extends TerminusMessage
 	
 	public int getPriority()
 	{
-		return this.eventType;
+		return this.priority;
 	}
 	
 	public void setPrority(int p)

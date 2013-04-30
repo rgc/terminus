@@ -1,5 +1,8 @@
 package edu.buffalo.cse.terminus.client;
 
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
+
 import android.hardware.Sensor;
 import android.hardware.SensorEventListener;
 import edu.buffalo.cse.terminus.client.sensors.ICameraCallbacks;
@@ -11,15 +14,25 @@ import edu.buffalo.cse.terminus.messages.EventMessage;
 
 public class TerminusController implements ICameraCallbacks
 {
-
 	private TerminusSettings settings;
 	private TerminusConnection connection;
-	
 	private TerminusSensorManager sensorManager;
-	
 	private TerminusClientMainActivity activity;
 	
-	public int TotPriority=0;
+	private int totPriority = 0;
+	
+	private static final int CAMERA_TOTALS = 0;
+	private static final int SOUND_TOTALS = 1;
+	private static final int MAG_TOTALS = 2;
+	private static final int ACCEL_TOTALS = 3;
+	private static final int LIGHT_TOTALS = 4;
+	
+	private static final int NUM_TOTALS = 5;
+	private int sensorTotals[] = new int[NUM_TOTALS];
+	
+	private static final int DUTY_CYCLE_INTERVAL = 1000;
+	private static final int START_DELAY = 5000;
+	private Lock cycleLock;
 	
 	public TerminusController(TerminusSettings settings, SensorEventListener listener, 
 			INetworkCallbacks networkCallbacks, TerminusClientMainActivity a)
@@ -31,6 +44,11 @@ public class TerminusController implements ICameraCallbacks
 		
 		sensorManager = new TerminusSensorManager(settings, listener, this, activity);
 		//sensorManager.createSoundAlgos();
+		
+		clearTotals();
+		cycleLock = new ReentrantLock();
+		
+		startDutyCycle();
 	}
 	
 	public void start()
@@ -64,58 +82,122 @@ public class TerminusController implements ICameraCallbacks
 		connection.disconnect();
 	}
 	
-	public void sensorEventSensed(int type,int pri)
+	public int getTotalPriority()
 	{
-		TotPriority+=pri;
+		return this.totPriority;
+	}
+	
+	private void clearTotals()
+	{
+		totPriority = 0;
 		
-		/* Convert to Terminus Message event types */
-		int eventType = 0;
+		for (int i = 0; i < NUM_TOTALS; i++)
+			sensorTotals[i] = 0;
+	}
+	
+	private void updateTotals(int totType, int priority)
+	{
+		cycleLock.lock();
+		
+		if (totType >= 0 && totType < NUM_TOTALS)
+		{
+			totPriority += priority;
+			sensorTotals[totType] += priority;
+		}
+		
+		cycleLock.unlock();
+	}
+	
+	private void prepareReport()
+	{
+		EventMessage em = connection.getMessageFactory().getEventMessage(connection.getConnectionID());
+		em.setPrority(totPriority);
+		em.setEventType(EventMessage.EVENT_CAMERA_MOTION);
+		connection.sendMessage(em);	
+	}
+	
+	private void startDutyCycle()
+	{
+		new Thread(new Runnable() {
+			
+			@Override
+			public void run() 
+			{
+				//First, get the algos up and running
+				try 
+				{
+					Thread.sleep(START_DELAY);
+				}
+				catch (InterruptedException e) 
+				{
+				}
+				
+				cycleLock.lock();
+				clearTotals();
+				sensorManager.clearSensorsPriority();
+				cycleLock.unlock();
+				
+				while (true)
+				{		
+					try
+					{
+						Thread.sleep(DUTY_CYCLE_INTERVAL);
+					}
+					catch (InterruptedException e) 
+					{
+					}
+					
+					cycleLock.lock();
+					
+					if (totPriority > 0 && totPriority >= settings.PriorityLimit)
+					{
+						prepareReport();
+					}
+					
+					sensorManager.clearSensorsPriority();
+					clearTotals();
+					cycleLock.unlock();
+				}
+			}
+		}).start();
+	}
+	
+	public void sensorEventSensed(int type, int pri)
+	{
+		int totalType = 0;
 		
 		switch (type)
 		{
 		case Sensor.TYPE_ACCELEROMETER:
-			eventType = EventMessage.EVENT_ACCELEROMETER;
+			totalType = ACCEL_TOTALS;
 			break;
 		case Sensor.TYPE_MAGNETIC_FIELD:
-			eventType = EventMessage.EVENT_MAGNETOMETER;
+			totalType = MAG_TOTALS;
 			break;
 		case Sensor.TYPE_LIGHT:
-			eventType = EventMessage.EVENT_LIGHT;
+			totalType = LIGHT_TOTALS;
 			break;
 		}
 		
-		if(TotPriority >settings.PriorityLimit){
-			EventMessage em = connection.getMessageFactory().getEventMessage(connection.getConnectionID());
-			em.setEventType(eventType);
-			em.setPrority(TotPriority);
-			connection.sendMessage(em);
-		}
+		updateTotals(totalType, pri);
 	}
 	
 	public void onCameraMotionDetected()
 	{
-		EventMessage em = connection.getMessageFactory().getEventMessage(connection.getConnectionID());
-		em.setEventType(EventMessage.EVENT_CAMERA_MOTION);
-		connection.sendMessage(em);
+		updateTotals(CAMERA_TOTALS, 1000);
 	}
 	
 	public void onCameraMotionDetected(byte[] imageBytes)
 	{
-		onCameraMotionDetected();
+		updateTotals(CAMERA_TOTALS, 1000);
 		
-		LowLevelImageMessage im = new LowLevelImageMessage(connection.getConnectionID());
-		im.setImage(imageBytes);
-		connection.sendImage(im);
+		//LowLevelImageMessage im = new LowLevelImageMessage(connection.getConnectionID());
+		//im.setImage(imageBytes);
+		//connection.sendImage(im);
 	}
 	
-	public void soundEventSensed(int pri){
-		TotPriority+=pri;
-		
-		if(TotPriority >settings.PriorityLimit){
-			EventMessage em = connection.getMessageFactory().getEventMessage(connection.getConnectionID());
-			em.setEventType(EventMessage.EVENT_SOUND);
-			em.setPrority(TotPriority);
-			connection.sendMessage(em);
-		}
+	public void soundEventSensed(int pri)
+	{
+		updateTotals(SOUND_TOTALS, pri);
 	}
 }

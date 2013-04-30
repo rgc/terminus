@@ -59,54 +59,18 @@ public class Terminus implements ITerminusMsgCallback
 		
 		switch (msg.getMessageType()) 
 		{
-			case TerminusMessage.MSG_REGISTER:
-				type = "Reg";
-				break;
-
-			case TerminusMessage.MSG_UNREGISTER:
-				type = "Unreg";
-				dashboard.removeNode(msg.getID());
-				break;
-
-			case TerminusMessage.MSG_TEST:
-				type = "Test";
-				break;
-			
-			case TerminusMessage.MSG_EVENT:
-				EventMessage em  = (EventMessage)msg;
-
-				switch (em.getEventType()) 
-				{
-					case EventMessage.EVENT_ACCELEROMETER:
-						type = "Accel";
-						break;
-					case EventMessage.EVENT_MAGNETOMETER:
-						type = "Magno";
-						break;
-					case EventMessage.EVENT_LIGHT:
-						type = "Light";
-						break;
-					case EventMessage.EVENT_CAMERA_MOTION:
-						type = "Camera";
-						break;
-					case EventMessage.EVENT_SOUND:
-						type = "Sound";
-						break;
-				} // end switch
-				break;
-				
 			case TerminusMessage.MSG_IMAGE:
-			{
 				ImageMessage im = (ImageMessage) msg;
-				System.out.println("Image Received, Size = " + String.valueOf(im.getImage().length));
+				//System.out.println("Image Received, Size = " + String.valueOf(im.getImage().length));
 				dashboard.addUpdateImage(im.getID(), im.getImage());
 				return;
-			}
+			
+			default:
+				dashboard.addMessage(msg);
 				
-		} // end switch
+		}
 		
-		dashboard.addMessage(msg.getID(), type, timestamp);
-		System.out.println(type + " Message Received from" + msg.getID());
+		//System.out.println(type + " Message Received from" + msg.getID());
 	}
 	
 	/**

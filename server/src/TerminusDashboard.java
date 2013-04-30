@@ -3,6 +3,9 @@ import javax.swing.*;
 import java.util.*;
 import javax.swing.table.AbstractTableModel;
 
+import edu.buffalo.cse.terminus.messages.EventMessage;
+import edu.buffalo.cse.terminus.messages.TerminusMessage;
+
 import java.util.Date;
 import java.util.List;
 import java.util.HashMap;
@@ -56,14 +59,66 @@ public class TerminusDashboard extends JPanel {
 		
 	}
 	
-	public void addMessage(String id, String type, Date ts) {
-		
-        SimpleDateFormat dateFormat = new SimpleDateFormat("HH:mm:ss MM/dd/yyyy");
-		
-		tableModel.addRow(Arrays.asList(dateFormat.format(ts), type, id));
-				
+	private String getShortTypeName(int type)
+	{
+		switch (type) 
+		{
+			case EventMessage.EVENT_ACCELEROMETER:
+				return "Accel";
+			case EventMessage.EVENT_MAGNETOMETER:
+				return  "Magno";
+			case EventMessage.EVENT_LIGHT:
+				return "Light";
+			case EventMessage.EVENT_CAMERA_MOTION:
+				return "Camera";
+			case EventMessage.EVENT_SOUND:
+				return "Sound";
+			default:
+					return "";
+		} // end switch
 	}
-
+	
+	public void addMessage(TerminusMessage message) 
+	{
+        if (message.getMessageType() == TerminusMessage.MSG_EVENT)
+        	addEvent((EventMessage)message);
+        else
+        	addMiscMessage(message);
+	}
+	
+	private void addMiscMessage(TerminusMessage message)
+	{
+		String type = "Unknown";
+		
+		switch (message.getMessageType())
+		{
+		case TerminusMessage.MSG_REGISTER:
+			type = "Reg";
+			break;
+	
+		case TerminusMessage.MSG_UNREGISTER:
+			type = "Unreg";
+			this.removeNode(message.getID());
+			break;
+	
+		case TerminusMessage.MSG_TEST:
+			type = "Test";
+			break;
+		}
+		
+		tableModel.addRow(Arrays.asList("", type, message.getID(), ""));
+	}
+	
+	private void addEvent(EventMessage event)
+	{
+		SimpleDateFormat dateFormat = new SimpleDateFormat("HH:mm:ss MM/dd/yyyy");
+        String timestamp = dateFormat.format(event.getTimestamp());
+        String priority = String.valueOf(event.getPriority());
+        String id = event.getID();
+        String type = getShortTypeName(event.getEventType());
+		tableModel.addRow(Arrays.asList(timestamp, type, id, priority));
+	}
+	
 	public void addUpdateImage(String nodeId, byte[] img) {
 
 		ImageIcon updatedImage = new ImageIcon(img);
@@ -167,6 +222,7 @@ public class TerminusDashboard extends JPanel {
 			columnNames.add("TimeStamp");
 			columnNames.add("Type");
 			columnNames.add("Node");
+			columnNames.add("Pri");
 		}
 
 		public void addRow(List rowData)

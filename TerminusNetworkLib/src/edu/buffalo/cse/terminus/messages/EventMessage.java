@@ -4,18 +4,24 @@ import java.util.Date;
 
 public class EventMessage extends TerminusMessage 
 {
-	public static final int EVENT_CAMERA_UNKNOWN = 0;
-	public static final int EVENT_CAMERA_MOTION = 1; 
-	public static final int EVENT_ACCELEROMETER = 2;
-	public static final int EVENT_MAGNETOMETER = 3;
-	public static final int EVENT_LIGHT = 4;
-	public static final int EVENT_SOUND = 5;
+	public static final int EVENT_CAMERA_MOTION = 0;
+	public static final int EVENT_ACCELEROMETER = 1;
+	public static final int EVENT_MAGNETOMETER = 2;
+	public static final int EVENT_LIGHT = 3;
+	public static final int EVENT_SOUND = 4;
 	
-	protected int eventType;
+	public static final int NUM_EVENT_TYPES = 5;
+	
+	
+	public static final int EVENT_START = 0;
+	public static final int EVENT_UPDATE = 1;
+	public static final int EVENT_END = 2;
+	
 	protected Date timestamp;
 	protected int priority;
-	protected byte[] data;
-
+	protected int[] sensorPriorities;
+	protected int eventMsgType;
+	
 	public EventMessage()
 	{ 
 		this("");
@@ -24,10 +30,9 @@ public class EventMessage extends TerminusMessage
 	public EventMessage(String id)
 	{
 		super(id);
-		this.type = TerminusMessage.MSG_EVENT;
-		this.eventType = EVENT_CAMERA_UNKNOWN;
-		this.timestamp = new Date();
-		data = new byte[0];		//Avoid null pointers
+		type = TerminusMessage.MSG_EVENT;
+		sensorPriorities = new int[NUM_EVENT_TYPES];
+		timestamp = new Date();
 	}
 	
 	public Date getTimestamp()
@@ -35,34 +40,45 @@ public class EventMessage extends TerminusMessage
 		return this.timestamp;
 	}
 	
-	public int getEventType()
+	/*
+	 * Return the message type, as in start, update, or stop 
+	 */
+	public int getEventMsgType()
 	{
-		return this.eventType;
+		return this.eventMsgType;
 	}
 	
-	public void setEventType(int t)
+	public void setEventMsgType(int t)
 	{
-		this.eventType = t;
+		eventMsgType = t;
 	}
 	
-	public int getPriority()
+	public int getTotalPriority()
 	{
 		return this.priority;
 	}
 	
-	public void setPrority(int p)
+	public void setTotalPrority(int p)
 	{
 		this.priority = p;
 	}
 	
-	public byte[] getData()
+	public int[] getSensorPriorities()
 	{
-		return this.data;
+		return sensorPriorities;
 	}
 	
-	public void setData(byte[] d)
+	public int getSensorPriority(int type)
 	{
-		this.data = d;
+		if (type < sensorPriorities.length)
+			return sensorPriorities[type];
+		else
+			return 0;
 	}
 	
+	public void setSensorPriority(int type, int val)
+	{
+		if (type < sensorPriorities.length)
+			sensorPriorities[type] = val;
+	}
 }

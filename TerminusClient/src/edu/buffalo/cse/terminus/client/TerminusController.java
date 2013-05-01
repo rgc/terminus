@@ -21,14 +21,7 @@ public class TerminusController implements ICameraCallbacks
 	
 	private int totPriority = 0;
 	
-	private static final int CAMERA_TOTALS = 0;
-	private static final int SOUND_TOTALS = 1;
-	private static final int MAG_TOTALS = 2;
-	private static final int ACCEL_TOTALS = 3;
-	private static final int LIGHT_TOTALS = 4;
-	
-	private static final int NUM_TOTALS = 5;
-	private int sensorTotals[] = new int[NUM_TOTALS];
+	private int sensorTotals[] = new int[EventMessage.NUM_EVENT_TYPES];
     
 	private static final int DUTY_CYCLE_INTERVAL = 1000;
 	private static final int START_DELAY = 5000;
@@ -97,7 +90,7 @@ public class TerminusController implements ICameraCallbacks
 	{
 		totPriority = 0;
 		
-		for (int i = 0; i < NUM_TOTALS; i++)
+		for (int i = 0; i < sensorTotals.length; i++)
 			sensorTotals[i] = 0;
 	}
 	
@@ -105,7 +98,7 @@ public class TerminusController implements ICameraCallbacks
 	{
 		cycleLock.lock();
 		
-		if (totType >= 0 && totType < NUM_TOTALS)
+		if (totType >= 0 && totType < sensorTotals.length)
 		{
 			totPriority += priority;
 			sensorTotals[totType] += priority;
@@ -117,8 +110,14 @@ public class TerminusController implements ICameraCallbacks
 	private void prepareReport()
 	{
 		EventMessage em = connection.getMessageFactory().getEventMessage(connection.getConnectionID());
-		em.setPrority(totPriority);
-		em.setEventType(EventMessage.EVENT_CAMERA_MOTION);
+		em.setEventMsgType(EventMessage.EVENT_START);
+		em.setTotalPrority(totPriority);
+		
+		for (int i = 0; i < sensorTotals.length; i++)
+		{
+			em.setSensorPriority(i, sensorTotals[i]);
+		}
+		
 		connection.sendMessage(em);	
 	}
 	
@@ -175,13 +174,13 @@ public class TerminusController implements ICameraCallbacks
 		switch (type)
 		{
 		case Sensor.TYPE_ACCELEROMETER:
-			totalType = ACCEL_TOTALS;
+			totalType = EventMessage.EVENT_ACCELEROMETER;
 			break;
 		case Sensor.TYPE_MAGNETIC_FIELD:
-			totalType = MAG_TOTALS;
+			totalType = EventMessage.EVENT_MAGNETOMETER;
 			break;
 		case Sensor.TYPE_LIGHT:
-			totalType = LIGHT_TOTALS;
+			totalType = EventMessage.EVENT_LIGHT;
 			break;
 		}
 		
@@ -225,12 +224,12 @@ public class TerminusController implements ICameraCallbacks
 	
 	public void onCameraMotionDetected()
 	{
-		updateTotals(CAMERA_TOTALS, 1000);
+		updateTotals(EventMessage.EVENT_CAMERA_MOTION, 1000);
 	}
 	
 	public void onCameraMotionDetected(byte[] imageBytes)
 	{
-		updateTotals(CAMERA_TOTALS, 1000);
+		updateTotals(EventMessage.EVENT_CAMERA_MOTION, 1000);
 		
 		//LowLevelImageMessage im = new LowLevelImageMessage(connection.getConnectionID());
 		//im.setImage(imageBytes);
@@ -239,7 +238,7 @@ public class TerminusController implements ICameraCallbacks
 	
 	public void soundEventSensed(int pri)
 	{
-		updateTotals(SOUND_TOTALS, pri);
+		updateTotals(EventMessage.EVENT_SOUND, pri);
         
         /*
 		boolean send = false;

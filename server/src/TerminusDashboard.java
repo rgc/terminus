@@ -74,8 +74,8 @@ public class TerminusDashboard extends JPanel {
 			case EventMessage.EVENT_SOUND:
 				return "Sound";
 			default:
-					return "";
-		} // end switch
+				return "";
+		}
 	}
 	
 	public void addMessage(TerminusMessage message) 
@@ -113,9 +113,10 @@ public class TerminusDashboard extends JPanel {
 	{
 		SimpleDateFormat dateFormat = new SimpleDateFormat("HH:mm:ss MM/dd/yyyy");
         String timestamp = dateFormat.format(event.getTimestamp());
-        String priority = String.valueOf(event.getPriority());
+        String priority = String.valueOf(event.getTotalPriority());
         String id = event.getID();
-        String type = getShortTypeName(event.getEventType());
+        //String type = getShortTypeName(event.getEventType());
+        String type = "No Types";
 		tableModel.addRow(Arrays.asList(timestamp, type, id, priority));
 	}
 	
@@ -166,8 +167,6 @@ public class TerminusDashboard extends JPanel {
 	    	x += fbounds.width;
 	    	
 	    }
-	    
-	    
 	}
 	
 	class NodeScreenFrame extends JInternalFrame {

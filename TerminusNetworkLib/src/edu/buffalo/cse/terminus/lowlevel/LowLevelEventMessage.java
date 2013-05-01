@@ -32,19 +32,17 @@ public class LowLevelEventMessage extends EventMessage implements ILowLevelMessa
 			String datetime = new SimpleDateFormat("yyyyMMddHHmmss").format(this.timestamp);
 			LowLevelHelper.writeString(datetime, os);
 			
-			os.write(LowLevelHelper.getIntArray((this.eventType)));
-			os.write(LowLevelHelper.getIntArray((this.priority)));
+			os.write(LowLevelHelper.getIntArray(this.eventMsgType));
+			os.write(LowLevelHelper.getIntArray(this.priority));
 			
-			//Data (image) = Length + Byte Array
-			if (this.data == null || this.data.length == 0)
+			for (int i = 0; i < sensorPriorities.length; i++)
 			{
-				os.write(LowLevelHelper.getIntArray((0)));
+				if (sensorPriorities[i] > 0)
+				{
+					os.write(LowLevelHelper.getIntArray(i));
+					os.write(LowLevelHelper.getIntArray(sensorPriorities[i]));
+				}
 			}
-			else
-			{
-				os.write(LowLevelHelper.getIntArray(this.data.length));
-				os.write(this.data);
-			}			
 			
 			byte[] fullMessage = os.toByteArray();
 			LowLevelHelper.putMessageLength(fullMessage);
@@ -71,35 +69,28 @@ public class LowLevelEventMessage extends EventMessage implements ILowLevelMessa
 		SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMddHHmmss");
 		pos += 15;	//14 for string + null terminator
 		
-		//Event Type
+		//Event Message Type
 		if (pos + 4 <= msg.length)
-			this.eventType = LowLevelHelper.readInt(msg, pos);
+			this.eventMsgType = LowLevelHelper.readInt(msg, pos);
 		pos += 4;	//int length
 		
-		//Priority
+		//Total Priority
 		if (pos + 4 <= msg.length)
 			this.priority = LowLevelHelper.readInt(msg, pos);
 		pos += 4;	//int length
 		
-		//Data Length
-		int dlen = 0;
-		if (pos + 4 <= msg.length)
+		//Individual priorities
+		while (pos + 8 <= msg.length)
 		{
-			dlen = LowLevelHelper.readInt(msg, pos);
-			pos += 4;	//int length
+			int type = LowLevelHelper.readInt(msg, pos);
+			pos += 4;
+			
+			int val = LowLevelHelper.readInt(msg, pos);
+			pos += 4;
+			
+			this.setSensorPriority(type, val);
 		}
-		this.data = new byte[dlen];
-		
-		//Misc Data (i.e. image file)
-		//Make sure we actually received dlen bytes.
-		if (dlen > 0 && (pos + dlen <= msg.length))
-		{
-			for (int i = 0; i < dlen; i++)
-			{
-				this.data[i] = msg[pos++];
-			}
-		}
-		
+				
 		try 
 		{
 			this.timestamp = sdf.parse(datetime);

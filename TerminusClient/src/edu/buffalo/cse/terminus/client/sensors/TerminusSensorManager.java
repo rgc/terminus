@@ -113,21 +113,6 @@ public class TerminusSensorManager implements SensorEventListener
 			lightAlgo.stopAlgo();
 	}
 	
-	public void clearSensorsPriority()
-	{
-		if (accelerometerAlgo != null)
-			accelerometerAlgo.clearPriority();
-		
-		if (magnetometerAlgo != null)
-			magnetometerAlgo.clearPriority();
-		
-		if (lightAlgo != null)
-			lightAlgo.clearPriority();
-		
-		if(soundAlgo != null)
-			soundAlgo.clearPriority();
-	}
-	
 	public void stopSoundAlgos()
 	{
 		if(soundAlgo != null)

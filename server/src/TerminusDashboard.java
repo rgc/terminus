@@ -6,12 +6,14 @@ import javax.swing.table.AbstractTableModel;
 import edu.buffalo.cse.terminus.messages.EventMessage;
 import edu.buffalo.cse.terminus.messages.TerminusMessage;
 
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.HashMap;
 import java.text.SimpleDateFormat;
 
-public class TerminusDashboard extends JPanel {
+public class TerminusDashboard extends JPanel 
+{
 	private JFrame frame;
 	private JTable table;
 	private JDesktopPane desktop;
@@ -59,25 +61,6 @@ public class TerminusDashboard extends JPanel {
 		
 	}
 	
-	private String getShortTypeName(int type)
-	{
-		switch (type) 
-		{
-			case EventMessage.EVENT_ACCELEROMETER:
-				return "Accel";
-			case EventMessage.EVENT_MAGNETOMETER:
-				return  "Magno";
-			case EventMessage.EVENT_LIGHT:
-				return "Light";
-			case EventMessage.EVENT_CAMERA_MOTION:
-				return "Camera";
-			case EventMessage.EVENT_SOUND:
-				return "Sound";
-			default:
-				return "";
-		}
-	}
-	
 	public void addMessage(TerminusMessage message) 
 	{
         if (message.getMessageType() == TerminusMessage.MSG_EVENT)
@@ -115,9 +98,42 @@ public class TerminusDashboard extends JPanel {
         String timestamp = dateFormat.format(event.getTimestamp());
         String priority = String.valueOf(event.getTotalPriority());
         String id = event.getID();
-        //String type = getShortTypeName(event.getEventType());
-        String type = "No Types";
+        String type = "";
+        
+        switch (event.getEventMsgType())
+        {
+        case EventMessage.EVENT_START:
+        	type = "Event Start";
+        	break;
+        
+        case EventMessage.EVENT_UPDATE:
+        	type = "Event Update";
+        	break;
+        	
+        case EventMessage.EVENT_END:
+        	type = "Event End";
+        	break;
+        }
+        
 		tableModel.addRow(Arrays.asList(timestamp, type, id, priority));
+		updateNodeEvent(event);
+	}
+	
+	private void updateNodeEvent(EventMessage event)
+	{
+		String id = event.getID();
+		if (!nodeScreens.containsKey(id)) 
+		{
+			NodeScreenFrame tframe = new NodeScreenFrame(id);
+			tframe.updateEvent(event);
+		    desktop.add(tframe);
+		    tile(desktop);
+			nodeScreens.put(id, tframe);
+		}
+		else
+		{
+			nodeScreens.get(id).updateEvent(event);
+		}
 	}
 	
 	public void addUpdateImage(String nodeId, byte[] img) {
@@ -137,8 +153,7 @@ public class TerminusDashboard extends JPanel {
 			nodeScreens.get(nodeId).setCameraScreen(img);
 			nodeScreens.get(nodeId).setVisible(true);
 
-		}		
-
+		}
 	}
 	
 	public void removeNode(String nodeId) {
@@ -172,7 +187,7 @@ public class TerminusDashboard extends JPanel {
 	class NodeScreenFrame extends JInternalFrame {
 		
 		private JLabel picLabel;
-		
+		private NodeEventTableModel nodeTableModel;
 		NodeScreenFrame(String nodeId) {
 			super(	nodeId,
 					false,	// resize
@@ -180,11 +195,42 @@ public class TerminusDashboard extends JPanel {
 					false,  // maximize
 					true);
 			
-			picLabel = new JLabel();
+			// Main panel
+			JPanel panel = new JPanel();
+			panel.setLayout(new javax.swing.BoxLayout(panel, javax.swing.BoxLayout.Y_AXIS));
 			
-			this.add(picLabel);
+			picLabel = new JLabel();
+			panel.add(picLabel);
+			
+			nodeTableModel = new NodeEventTableModel();
+			JTable table = new JTable(nodeTableModel);
+			JScrollPane tableScrollPane = new JScrollPane(table);
+			//tableScrollPane.setMinimumSize(new Dimension(300, 100));
+			//table.setPreferredScrollableViewportSize(new Dimension(300, 100));
+			//table.setFillsViewportHeight(true);
+			panel.add(tableScrollPane);
+			
+			this.add(panel);
 			this.setDefaultCloseOperation(JInternalFrame.HIDE_ON_CLOSE);
 			
+		}
+		
+		void updateEvent(EventMessage em)
+		{
+			nodeTableModel.updateEvent(em);
+			
+			/*
+			 * In case the camera is off...
+			 */
+			if (!this.isVisible())
+			{
+				this.setSize(175, 175);
+				this.setVisible(true);
+			    
+			    try {
+		    		this.setSelected(true);
+			    } catch (java.beans.PropertyVetoException e) {}
+			}
 		}
 		
 		void setCameraScreen(byte[] i) {
@@ -197,8 +243,10 @@ public class TerminusDashboard extends JPanel {
 			picLabel.revalidate();
 			picLabel.repaint();
 			
-			this.setSize(	i.getIconWidth()  + 10,
-	    			   		i.getIconHeight() + 32);
+			//this.setSize(	i.getIconWidth()  + 10,
+	    	//		   		i.getIconHeight() + 32);
+			
+			this.setSize(i.getIconWidth() + 10, i.getIconHeight() + 175);
 			
 		    this.setVisible(true);
 		    
@@ -211,8 +259,8 @@ public class TerminusDashboard extends JPanel {
 	}
 	
 
-	class EventTableModel extends AbstractTableModel {
-
+	class EventTableModel extends AbstractTableModel 
+	{
 		private final int MAX_EVENTS		= 100;
 		private List<String> columnNames 	= new ArrayList();
 		private List<List> data 			= new Stack();
@@ -262,5 +310,110 @@ public class TerminusDashboard extends JPanel {
 
 	}
 	
+	/*
+	 * Data model for the individual nodes' events
+	 */
+	class NodeEventTableModel extends AbstractTableModel 
+	{
+		private List<String> columnNames 	= new ArrayList();
+		private List<List> data 			= new ArrayList();
+		private Date lastStart;
+		
+		NodeEventTableModel() 
+		{
+			columnNames.add("Event Type");
+			columnNames.add("Priority");
+		}
+		
+		private String getShortTypeName(int type)
+		{
+			switch (type) 
+			{
+				case EventMessage.EVENT_ACCELEROMETER:
+					return "Accel";
+				case EventMessage.EVENT_MAGNETOMETER:
+					return  "Magno";
+				case EventMessage.EVENT_LIGHT:
+					return "Light";
+				case EventMessage.EVENT_CAMERA_MOTION:
+					return "Camera";
+				case EventMessage.EVENT_SOUND:
+					return "Sound";
+				default:
+					return "";
+			}
+		}
+		
+		public void updateEvent(EventMessage em)
+		{
+			data = new ArrayList();
+			
+			if (em.getEventMsgType() == EventMessage.EVENT_END)
+			{
+				data.add(Arrays.asList("The event has ended", ""));
+				
+				if (lastStart != null)
+				{
+					long duration =  em.getTimestamp().getTime() - lastStart.getTime();
+					long sec = duration / 1000;
+					long min = sec / 60;
+					long hr = min / 60;
+					
+					sec -= (60 * min);
+					min -= (60 * hr);
+					String out = String.valueOf(hr) + " hr " + String.valueOf(min) + " min " + String.valueOf(sec) + " sec"; 
+					data.add(Arrays.asList("Duration", out));
+				}
+			}
+			else
+			{
+				if (em.getEventMsgType() == EventMessage.EVENT_START)
+				{
+					lastStart = em.getTimestamp();
+				}
+				
+				data.add(Arrays.asList("Total", String.valueOf(em.getTotalPriority())));
+				
+				int[] priorities = em.getSensorPriorities();
+				
+				for (int i = 0; i < priorities.length; i++)
+					data.add(Arrays.asList(getShortTypeName(i), String.valueOf(priorities[i])));	
+			}
+			fireTableRowsInserted(0, data.size()-1);
+		}
+		
+		public int getColumnCount() 
+		{
+			return columnNames.size();
+		}
+
+		public int getRowCount() 
+		{
+			return data.size();
+		}
+
+		public String getColumnName(int col) 
+		{
+			return columnNames.get(col);
+		}
+
+		public Object getValueAt(int row, int col) 
+		{
+			if (row >= data.size())
+				return null;
+			else
+				return data.get(row).get(col);
+		}
+
+		public Class getColumnClass(int c) 
+		{
+			return getValueAt(0, c).getClass();
+		}
+
+		public boolean isCellEditable(int row, int col)
+		{
+			return false;
+		}
+	}
 
 }

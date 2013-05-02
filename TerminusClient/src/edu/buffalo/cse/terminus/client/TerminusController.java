@@ -20,15 +20,34 @@ public class TerminusController implements ICameraCallbacks
 	private TerminusClientMainActivity activity;
 	
 	private int totPriority = 0;
-	
-	private int sensorTotals[] = new int[EventMessage.NUM_EVENT_TYPES];
-    
-	private static final int DUTY_CYCLE_INTERVAL = 1000;
-	private static final int START_DELAY = 5000;
 	private Lock cycleLock;
+	private int sensorTotals[] = new int[EventMessage.NUM_EVENT_TYPES];
+	
+	private static final int DUTY_CYCLE_INTERVAL = 1000;
+	private static final int DECREMENT_CYCLE_INTERVAL = 100;
+	private static final int START_DELAY = 5000;
+	private static final int EVENT_END_CYCLES = 3;
     
+	public static final int PRIORITY_CAP = 5000;
+	
+	//Priority per second
+	private static final int CAMERA_PRI_RATE = 100;
+	
+	//Decrement weight
+	private static final int CAMERA_DEC_RATE = 50;
+    private int cameraDec = CAMERA_DEC_RATE / (1000 / DECREMENT_CYCLE_INTERVAL);
+	
 	//priority level 0 is total priority 0
 	public boolean[] PriorityLevels = new boolean[10];
+	
+	private enum EventState
+	{
+		delayStart,
+		idle,
+		inEvent
+	}
+	
+	EventState curState;
 	
 	public TerminusController(TerminusSettings settings, SensorEventListener listener, 
 			INetworkCallbacks networkCallbacks, TerminusClientMainActivity a)
@@ -44,7 +63,8 @@ public class TerminusController implements ICameraCallbacks
 		clearTotals();
 		cycleLock = new ReentrantLock();
 		
-		startDutyCycle();
+		curState = EventState.delayStart;
+		delayStartThreads();
 	}
 	
 	public void start()
@@ -96,7 +116,16 @@ public class TerminusController implements ICameraCallbacks
 	
 	private void updateTotals(int totType, int priority)
 	{
+		if (curState == EventState.delayStart)
+			return;
+		
 		cycleLock.lock();
+		
+		if (totPriority + priority > PRIORITY_CAP)
+		{
+			cycleLock.unlock();
+			return;
+		}
 		
 		if (totType >= 0 && totType < sensorTotals.length)
 		{
@@ -104,13 +133,25 @@ public class TerminusController implements ICameraCallbacks
 			sensorTotals[totType] += priority;
 		}
 		
-		cycleLock.unlock();
+		if (curState == EventState.idle && totPriority > settings.PriorityLimit)
+		{
+			prepareReport(EventMessage.EVENT_START);
+			curState = EventState.inEvent;
+			cycleLock.unlock();
+			startDutyCycle();
+		}
+		else
+		{
+			cycleLock.unlock();
+		}
+		
 	}
 	
-	private void prepareReport()
+	private void prepareReport(int messageType)
 	{
 		EventMessage em = connection.getMessageFactory().getEventMessage(connection.getConnectionID());
-		em.setEventMsgType(EventMessage.EVENT_START);
+		
+		em.setEventMsgType(messageType);
 		em.setTotalPrority(totPriority);
 		
 		for (int i = 0; i < sensorTotals.length; i++)
@@ -121,15 +162,14 @@ public class TerminusController implements ICameraCallbacks
 		connection.sendMessage(em);	
 	}
 	
-	private void startDutyCycle()
+	private void delayStartThreads()
 	{
-		new Thread(new Runnable() {
-			
+		new Thread(new Runnable()
+		{
 			@Override
 			public void run() 
 			{
-				//First, get the algos up and running
-				try 
+				try
 				{
 					Thread.sleep(START_DELAY);
 				}
@@ -139,11 +179,31 @@ public class TerminusController implements ICameraCallbacks
 				
 				cycleLock.lock();
 				clearTotals();
-				sensorManager.clearSensorsPriority();
+				AccelCDFAlgo.FirstAclPri = false;
+				MagCDFAlgo.FirstMagPri = false;
+				LightCDFAlgo.FirstLitPri = false;
+				SoundAlgo.FirstSndPri = false;
 				cycleLock.unlock();
 				
+				curState = EventState.idle;
+				
+				startDecrementCycle();
+			}
+		}
+		).start();
+	}
+	
+	private void startDutyCycle()
+	{
+		new Thread(new Runnable() {
+			
+			@Override
+			public void run() 
+			{
+				int idleCount = 0;
+				
 				while (true)
-				{		
+				{
 					try
 					{
 						Thread.sleep(DUTY_CYCLE_INTERVAL);
@@ -156,11 +216,97 @@ public class TerminusController implements ICameraCallbacks
 					
 					if (totPriority > 0 && totPriority >= settings.PriorityLimit)
 					{
-						prepareReport();
+						idleCount = 0;
+						prepareReport(EventMessage.EVENT_UPDATE);
+					}
+					else
+					{
+						idleCount++;
+						if (idleCount >= EVENT_END_CYCLES)
+						{
+							prepareReport(EventMessage.EVENT_END);
+							curState = EventState.idle;
+							cycleLock.unlock();
+							return;
+						}
 					}
 					
-					sensorManager.clearSensorsPriority();
-					clearTotals();
+					cycleLock.unlock();
+				}
+			}
+		}).start();
+	}
+	
+	private void startDecrementCycle()
+	{
+		new Thread(new Runnable() {
+			
+			@Override
+			public void run() 
+			{
+				while (true)
+				{
+					try
+					{
+						Thread.sleep(DECREMENT_CYCLE_INTERVAL);
+					}
+					catch (InterruptedException e) 
+					{
+					}
+					
+					cycleLock.lock();
+					
+					if (totPriority > 0)
+					{
+						for (int i = 0; i < sensorTotals.length; i++)
+						{
+							if (sensorTotals[i] > 0)
+							{
+								int dec = 0;
+								switch (i)
+								{
+								case EventMessage.EVENT_CAMERA_MOTION:
+									dec = cameraDec;
+									break;
+									
+								case EventMessage.EVENT_ACCELEROMETER:
+									dec = 1;
+									if (sensorTotals[i] <= dec)
+										AccelCDFAlgo.FirstAclPri = false;
+									break;
+									
+								case EventMessage.EVENT_MAGNETOMETER:
+									dec = 1;
+									if (sensorTotals[i] <= dec)
+										MagCDFAlgo.FirstMagPri = false;
+									break;
+									
+								case EventMessage.EVENT_LIGHT:
+									dec = 1;
+									if (sensorTotals[i] <= dec)
+										LightCDFAlgo.FirstLitPri = false;
+									break;
+									
+								case EventMessage.EVENT_SOUND:
+									dec = 1;
+									if (sensorTotals[i] <= dec)
+										SoundAlgo.FirstSndPri = false;
+									break;
+								}
+								
+								if (sensorTotals[i] <= dec)
+								{
+									totPriority -= sensorTotals[i];
+									sensorTotals[i] = 0;
+								}
+								else
+								{
+									totPriority -= dec;
+									sensorTotals[i] -= dec;
+								}
+							}
+						}
+					}
 					cycleLock.unlock();
 				}
 			}
@@ -224,16 +370,24 @@ public class TerminusController implements ICameraCallbacks
 	
 	public void onCameraMotionDetected()
 	{
-		updateTotals(EventMessage.EVENT_CAMERA_MOTION, 1000);
+		updateTotals(EventMessage.EVENT_CAMERA_MOTION, 20);
 	}
 	
-	public void onCameraMotionDetected(byte[] imageBytes)
+	public void onCameraMotionDetected(byte[] imageBytes, float fps)
 	{
-		updateTotals(EventMessage.EVENT_CAMERA_MOTION, 1000);
+		if (fps == 0)
+			return;
 		
-		//LowLevelImageMessage im = new LowLevelImageMessage(connection.getConnectionID());
-		//im.setImage(imageBytes);
-		//connection.sendImage(im);
+		int cameraPri = (int)(CAMERA_PRI_RATE / fps);
+		
+		updateTotals(EventMessage.EVENT_CAMERA_MOTION, cameraPri);
+		
+		if (curState == EventState.delayStart)
+			return;
+		
+		LowLevelImageMessage im = new LowLevelImageMessage(connection.getConnectionID());
+		im.setImage(imageBytes);
+		connection.sendImage(im);
 	}
 	
 	public void soundEventSensed(int pri)

@@ -8,6 +8,7 @@ import edu.buffalo.cse.terminus.client.TerminusController;
 public class MagCDFAlgo extends SensorAlgo 
 {
 	public static int MAGNET_FACTOR = 1;
+	public static boolean FirstMagPri = false;
 	
 	//raw sensor data
 	private float[] mlevel;
@@ -37,8 +38,8 @@ public class MagCDFAlgo extends SensorAlgo
 		if(dm > MAGNET_FACTOR)
 		{
 			int MagPri = 0;
-			if(firstPriority == false){
-				firstPriority = true;
+			if(FirstMagPri == false){
+				FirstMagPri = true;
 				MagPri+=50;
 			}
 			MagPri+=(dm/10);

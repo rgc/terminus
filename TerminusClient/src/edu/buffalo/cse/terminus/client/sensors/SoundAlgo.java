@@ -13,8 +13,8 @@ public class SoundAlgo {
 	private MediaRecorder Recorder = null;
 	public float[] slevel;
 	public static int SOUND_FACTOR=20000;
+	public static boolean FirstSndPri = false;
 	public static int samplerate = 1;
-	private boolean FirstSndPri = false;
 	public static double sound;
 	
 	//private long[] time;

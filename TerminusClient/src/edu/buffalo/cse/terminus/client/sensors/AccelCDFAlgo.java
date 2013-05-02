@@ -8,6 +8,7 @@ import edu.buffalo.cse.terminus.client.TerminusController;
 public class AccelCDFAlgo extends SensorAlgo 
 {
 	public static int VIBRATION_FACTOR = 1;
+	public static boolean FirstAclPri = false;
 	
 	//raw sensor data
 	private float[] xacel;
@@ -50,8 +51,8 @@ public class AccelCDFAlgo extends SensorAlgo
 		if((dx > VIBRATION_FACTOR)||(dy > VIBRATION_FACTOR)||(dz > VIBRATION_FACTOR))
 		{
 			int AclPri = 0;
-			if(firstPriority == false){
-				firstPriority = true;
+			if(FirstAclPri == false){
+				FirstAclPri = true;
 				AclPri+=30;
 			}
 			AclPri+=(dx/10);

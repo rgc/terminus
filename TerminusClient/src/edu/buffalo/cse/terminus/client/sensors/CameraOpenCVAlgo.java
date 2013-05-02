@@ -53,6 +53,8 @@ public abstract class CameraOpenCVAlgo extends CameraAlgo implements CvCameraVie
     
     private BaseLoaderCallback mLoaderCallback;
     
+    private ArrayList<Long> frameTimes = new ArrayList<Long>();
+    
     /**
      * Get the integer view id for the underlying CameraBridgeViewBase
      * preview window
@@ -208,6 +210,8 @@ public abstract class CameraOpenCVAlgo extends CameraAlgo implements CvCameraVie
 				}
 			}
 			
+			updateFrameTimes();
+			
 			// one event per frame, at most
 			if(motion) {
 				if(controller != null ) {
@@ -215,7 +219,7 @@ public abstract class CameraOpenCVAlgo extends CameraAlgo implements CvCameraVie
 					MatOfByte matOfByte = new MatOfByte();
 			        Highgui.imencode(".png", mGrayBox, matOfByte);
 			        byte[] imageBytes = matOfByte.toArray();
-					controller.onCameraMotionDetected(imageBytes);
+					controller.onCameraMotionDetected(imageBytes, getFPS());
 					
 				}
 			} else if(hadMotionLastFrame) {
@@ -225,11 +229,33 @@ public abstract class CameraOpenCVAlgo extends CameraAlgo implements CvCameraVie
 				MatOfByte matOfByte = new MatOfByte();
 		        Highgui.imencode(".png", mGray, matOfByte);
 		        byte[] imageBytes = matOfByte.toArray();
-				controller.onCameraMotionDetected(imageBytes);
+				controller.onCameraMotionDetected(imageBytes, getFPS());
 			}
 		}
 		return mRgba;
 	
 	}
 	
+	private void updateFrameTimes()
+	{
+		if (frameTimes.size() == 10)
+			frameTimes.remove(0);
+		
+		frameTimes.add(System.nanoTime());
+	}
+	
+	public float getFPS()
+	{
+		int count = frameTimes.size();
+		float fps = 0;
+		if (count > 0)
+		{
+			long start = frameTimes.get(0);
+			long end = frameTimes.get(count - 1);
+			float sec = (end - start) / 1000000000f;
+			fps = count / sec;
+		}
+		
+		return fps;
+	}
 }

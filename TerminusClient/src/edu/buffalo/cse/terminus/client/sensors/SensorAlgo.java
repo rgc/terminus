@@ -6,17 +6,10 @@ import edu.buffalo.cse.terminus.client.TerminusController;
 public abstract class SensorAlgo 
 {
 	TerminusController controller;
-	protected boolean firstPriority;
 	
 	public SensorAlgo(TerminusController c)
 	{
 		controller = c;
-		firstPriority = false;
-	}
-	
-	public void clearPriority()
-	{
-		firstPriority = false;
 	}
 	
 	public abstract void onSensorChanged(SensorEvent event);

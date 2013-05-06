@@ -10,28 +10,20 @@ import shared.ServerCloseException;
 import java.text.SimpleDateFormat;
 
 
+
 public class Terminus implements ITerminusMsgCallback
 {
 	private EventServer tserver;
 	TerminusDashboard dashboard;
+	TerminusWebServer webserver;
 	
 	public Terminus(String[] args)
 	{
 		this.tserver = new EventServer(this);
         dashboard = new TerminusDashboard();
-        
-        /*  DEBUG
-         * 
-        for (int i = 0; i<600; i++) {
-        	dashboard.addMessage("lala" + i, "camera",new Date());
-        	try {
-        	    Thread.sleep(100);
-        	} catch(InterruptedException ex) {
-        	    Thread.currentThread().interrupt();
-        	}
-        }
-        */
-        
+        // use high port since root needed for lower range
+        webserver = new TerminusWebServer(6900);
+                
 		/* Start the server(s) */
 		try
 		{
@@ -45,6 +37,20 @@ public class Terminus implements ITerminusMsgCallback
 			System.exit(1);
 			return;
 		}
+		
+        try
+		{
+			webserver.start();
+			System.out.println("Terminus Web Server started\n");
+			
+		}
+		catch (Exception e)
+		{
+			System.out.println(e.getMessage());
+			System.exit(1);
+			return;
+		}
+		
 	}
 	
 	@Override
@@ -53,9 +59,6 @@ public class Terminus implements ITerminusMsgCallback
 		if (msg == null) {
 			return;
 		}
-
-		Date timestamp = new Date();
-		String type = "Unknown";
 		
 		switch (msg.getMessageType()) 
 		{
@@ -69,8 +72,7 @@ public class Terminus implements ITerminusMsgCallback
 				dashboard.addMessage(msg);
 				
 		}
-		
-		//System.out.println(type + " Message Received from" + msg.getID());
+
 	}
 	
 	/**

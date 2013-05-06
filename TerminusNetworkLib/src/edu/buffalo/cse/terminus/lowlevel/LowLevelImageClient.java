@@ -1,4 +1,4 @@
-package edu.buffalo.cse.terminus.client.network.lowlevel;
+package edu.buffalo.cse.terminus.lowlevel;
 
 import java.io.DataOutputStream;
 import java.io.IOException;
@@ -7,8 +7,6 @@ import java.net.Socket;
 import java.net.SocketAddress;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
-
-import edu.buffalo.cse.terminus.lowlevel.LowLevelImageMessage;
 
 public class LowLevelImageClient 
 {

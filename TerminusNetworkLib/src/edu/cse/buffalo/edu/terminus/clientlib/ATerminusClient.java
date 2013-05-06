@@ -1,4 +1,4 @@
-package edu.buffalo.cse.terminus.client.network;
+package edu.cse.buffalo.edu.terminus.clientlib;
 
 
 import edu.buffalo.cse.terminus.messages.TerminusMessage;

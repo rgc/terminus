@@ -15,7 +15,9 @@ import shared.ATerminusConnection;
 import shared.ITerminusServer;
 import shared.ServerCloseException;
 import edu.buffalo.cse.terminus.lowlevel.LowLevelMessageFactory;
+import edu.buffalo.cse.terminus.messages.EventMessage;
 import edu.buffalo.cse.terminus.messages.ITerminusMessageFactory;
+import edu.buffalo.cse.terminus.messages.RegisterMessage;
 import edu.buffalo.cse.terminus.messages.RegistrationResponse;
 import edu.buffalo.cse.terminus.messages.TerminusMessage;
 import edu.buffalo.cse.terminus.messages.UnregisterMessage;
@@ -44,6 +46,7 @@ public class EventServer implements ITerminusMsgCallback, ITerminusServer
 	 * This may be useful for broadcasting messages.
 	 */
 	private final ConcurrentHashMap<String, ATerminusConnection> sessions;
+	private final ConcurrentHashMap<String, ATerminusConnection> consumerSessions;
 	
 	private String eventServerIP;
 	private ImageServer imageServer;
@@ -52,6 +55,7 @@ public class EventServer implements ITerminusMsgCallback, ITerminusServer
 	{
 		this.messageCallback = msgCallback;
 		sessions = new ConcurrentHashMap<String, ATerminusConnection>();
+		consumerSessions = new ConcurrentHashMap<String, ATerminusConnection>();
 		eventCom = new LowLevelServer(this, EVENT_PORT);
 		imageServer = new ImageServer(this);
 		//eventCom = new AkkaServer(this, EVENT_PORT);
@@ -131,7 +135,7 @@ public class EventServer implements ITerminusMsgCallback, ITerminusServer
 		{
 			/*
 			 * No session established for this id.
-			 * We'll send a Unregister message and won't take this message any further 
+			 * We'll send an Unregister message and won't take this message any further 
 			 */
 			UnregisterMessage urm = messageFactory.getUnregisterMessage(message.getID());
 			connection.sendMessage(urm);
@@ -189,6 +193,10 @@ public class EventServer implements ITerminusMsgCallback, ITerminusServer
 		
 		connection.setID(id);
 		
+		RegisterMessage rm = (RegisterMessage) message;
+		if (rm.getRegistrationType() == RegisterMessage.REG_TYPE_CONSUMER)
+			consumerSessions.put(id, connection);
+		
 		RegistrationResponse response = messageFactory.getRegistrationResponse(id);
 		response.setResult(RegistrationResponse.REGISTRATION_SUCCESS);
 		connection.sendMessage(response);
@@ -199,6 +207,15 @@ public class EventServer implements ITerminusMsgCallback, ITerminusServer
 		//TODO do something with the event!
 		//		Alternatively, just register all handlers for 
 		//		events to receive callbacks.
+		
+		EventMessage em = (EventMessage) message;
+		if (em.getEventMsgType() == EventMessage.EVENT_START)
+		{
+			for (ATerminusConnection c : consumerSessions.values())
+			{
+				c.sendMessage(message);
+			}
+		}
 	}
 	
 	/*
@@ -223,6 +240,9 @@ public class EventServer implements ITerminusMsgCallback, ITerminusServer
 			sessions.remove(id);
 			connection.shutdown();
 		}
+		
+		if (consumerSessions.containsKey(id))
+			consumerSessions.remove(id);
 	}
 	
 	// /////////////////////////// NETWORK EVENTS /////////////////////////////

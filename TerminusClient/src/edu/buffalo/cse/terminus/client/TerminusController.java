@@ -6,11 +6,11 @@ import java.util.concurrent.locks.ReentrantLock;
 import android.hardware.Sensor;
 import android.hardware.SensorEventListener;
 import edu.buffalo.cse.terminus.client.sensors.ICameraCallbacks;
-import edu.buffalo.cse.terminus.client.network.INetworkCallbacks;
-import edu.buffalo.cse.terminus.client.network.TerminusConnection;
 import edu.buffalo.cse.terminus.client.sensors.*;
 import edu.buffalo.cse.terminus.lowlevel.LowLevelImageMessage;
 import edu.buffalo.cse.terminus.messages.EventMessage;
+import edu.cse.buffalo.edu.terminus.clientlib.INetworkCallbacks;
+import edu.cse.buffalo.edu.terminus.clientlib.TerminusConnection;
 
 public class TerminusController implements ICameraCallbacks
 {
@@ -382,7 +382,7 @@ public class TerminusController implements ICameraCallbacks
 		
 		updateTotals(EventMessage.EVENT_CAMERA_MOTION, cameraPri);
 		
-		if (curState == EventState.delayStart)
+		if (curState != EventState.inEvent)
 			return;
 		
 		LowLevelImageMessage im = new LowLevelImageMessage(connection.getConnectionID());

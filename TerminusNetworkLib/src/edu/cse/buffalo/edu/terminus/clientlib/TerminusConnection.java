@@ -1,23 +1,24 @@
-package edu.buffalo.cse.terminus.client.network;
+package edu.cse.buffalo.edu.terminus.clientlib;
 
 import java.io.IOException;
 import java.net.SocketTimeoutException;
 import java.net.UnknownHostException;
 
 import android.app.Activity;
+import android.content.Context;
 import android.os.Build;
 import android.provider.Settings.Secure;
-import edu.buffalo.cse.terminus.client.network.ATerminusClient;
 import edu.buffalo.cse.terminus.messages.ITerminusMessageFactory;
 import edu.buffalo.cse.terminus.messages.RegisterMessage;
 import edu.buffalo.cse.terminus.messages.RegistrationResponse;
 import edu.buffalo.cse.terminus.messages.TerminusMessage;
 import edu.buffalo.cse.terminus.messages.UnregisterMessage;
-import edu.buffalo.cse.terminus.client.network.lowlevel.LowLevelClient;
-import edu.buffalo.cse.terminus.client.network.lowlevel.LowLevelImageClient;
+import edu.buffalo.cse.terminus.lowlevel.LowLevelClient;
+import edu.buffalo.cse.terminus.lowlevel.LowLevelImageClient;
 import edu.buffalo.cse.terminus.lowlevel.LowLevelImageMessage;
 import edu.buffalo.cse.terminus.lowlevel.LowLevelMessageFactory;
 import edu.buffalo.cse.terminus.messages.TestMessage;
+import edu.cse.buffalo.edu.terminus.clientlib.ATerminusClient;
 
 public class TerminusConnection implements INetworkCallbacks
 {
@@ -48,6 +49,8 @@ public class TerminusConnection implements INetworkCallbacks
 	private String eventIPAddress;
 	private int eventPort;
 	
+	private boolean isConsumer;
+	
 	/*
 	 * This indicates we clicked the disconnect button vs. losing
 	 * the network connection 
@@ -56,7 +59,7 @@ public class TerminusConnection implements INetworkCallbacks
 	
 	public static final int IMAGE_PORT = 34412;
 	
-	public TerminusConnection(INetworkCallbacks c, Activity a) 
+	public TerminusConnection(INetworkCallbacks c, Context context) 
 	{
 		terminusClient = new LowLevelClient();
 		
@@ -64,11 +67,17 @@ public class TerminusConnection implements INetworkCallbacks
 		this.callbacks = c;
 		curConnectionState = ConnectionState.Disconnected;
 		curRegistrationState = RegistrationState.Unregistered;
-		
-		setUserID(a);
+		isConsumer = false;
+		setUserID(context);
 	}
 	
-	private void setUserID(Activity a)
+	public TerminusConnection(INetworkCallbacks c, Context context, boolean isConsumerApp)
+	{
+		this(c, context);
+		this.isConsumer = isConsumerApp;
+	}
+	
+	private void setUserID(Context c)
 	{
 		//This didn't work on tablets
 		//TelephonyManager mgr = (TelephonyManager)a.getSystemService(Context.TELEPHONY_SERVICE);
@@ -82,7 +91,7 @@ public class TerminusConnection implements INetworkCallbacks
 		 * we'll catch as we're debugging. 
 		 */
 		
-		String androidID = Secure.getString(a.getContentResolver(),Secure.ANDROID_ID);
+		String androidID = Secure.getString(c.getContentResolver(),Secure.ANDROID_ID);
 		
 		if (androidID != null)
 			this.uid = androidID; 
@@ -119,6 +128,11 @@ public class TerminusConnection implements INetworkCallbacks
 		
 		curConnectionState = ConnectionState.Connecting;
 		terminusClient.connect(host, port);
+	}
+	
+	public boolean isConnected()
+	{
+		return (this.curConnectionState == ConnectionState.Connected);
 	}
 	
 	public void sendTestMessage(String message)
@@ -338,6 +352,12 @@ public class TerminusConnection implements INetworkCallbacks
 	{
 		curRegistrationState = RegistrationState.Pending;
 		RegisterMessage rm = this.messageFactory.getRegisterMessage(this.uid);
+		
+		if (this.isConsumer)
+			rm.setRegistrationType(RegisterMessage.REG_TYPE_CONSUMER);
+		else
+			rm.setRegistrationType(RegisterMessage.REG_TYPE_EVENT);
+		
 		this.terminusClient.sendMessage(rm);
 	}
 	

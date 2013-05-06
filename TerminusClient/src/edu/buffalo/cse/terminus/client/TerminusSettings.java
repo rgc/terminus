@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.Editor;
+import android.provider.ContactsContract.CommonDataKinds.Nickname;
 
 public class TerminusSettings 
 {
@@ -20,6 +21,8 @@ public class TerminusSettings
 	public static final int CAMERA_LOWLEVEL = 3;
 	
 	private static final String TERMINUS_PREF_FILE = "TerminusSettings";
+	private static final String PARAM_LOCATION = "location";
+	private static final String PARAM_NICKNAME = "nickname";
 	private static final String PARAM_IP_ADDRESS = "ipAddress";
 	private static final String PARAM_PORT = "portNumber";
 	private static final String PARAM_CAMERA = "cameraOption";
@@ -33,10 +36,14 @@ public class TerminusSettings
 	public boolean useSound = false;
 	public ArrayList<Integer> sensorList = new ArrayList<Integer>();
 	public int PriorityLimit = 1;
+	public String location = "";
+	public String nickname = "";
 	
 	public void retrieve(Context c)
 	{
 		SharedPreferences settings = c.getSharedPreferences(TERMINUS_PREF_FILE, 0);
+		location = settings.getString(PARAM_LOCATION, "");
+		nickname = settings.getString(PARAM_NICKNAME, "");
 		ipAddress = settings.getString(PARAM_IP_ADDRESS, "");
 		port = settings.getInt(PARAM_PORT, 0);
 		cameraOption = settings.getInt(PARAM_CAMERA, CAMERA_NONE);
@@ -58,7 +65,7 @@ public class TerminusSettings
 				}
 				catch (NumberFormatException e)
 				{
-					//Somehow garbage go it inhere. Skip this one.
+					//Somehow garbage go it in here. Skip this one.
 				}
 			}
 		}
@@ -69,6 +76,8 @@ public class TerminusSettings
 		SharedPreferences settings = c.getSharedPreferences(TERMINUS_PREF_FILE, 0);
 		Editor e = settings.edit();
 		
+		e.putString(PARAM_LOCATION, location);
+		e.putString(PARAM_NICKNAME, nickname);
 		e.putString(PARAM_IP_ADDRESS, ipAddress);
 		e.putInt(PARAM_PORT, port);
 		e.putInt(PARAM_CAMERA, cameraOption);

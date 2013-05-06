@@ -1,4 +1,4 @@
-package edu.cse.buffalo.edu.terminus.clientlib;
+package edu.cse.buffalo.terminus.clientlib;
 
 import java.io.IOException;
 import java.net.SocketTimeoutException;
@@ -18,7 +18,7 @@ import edu.buffalo.cse.terminus.lowlevel.LowLevelImageClient;
 import edu.buffalo.cse.terminus.lowlevel.LowLevelImageMessage;
 import edu.buffalo.cse.terminus.lowlevel.LowLevelMessageFactory;
 import edu.buffalo.cse.terminus.messages.TestMessage;
-import edu.cse.buffalo.edu.terminus.clientlib.ATerminusClient;
+import edu.cse.buffalo.terminus.clientlib.ATerminusClient;
 
 public class TerminusConnection implements INetworkCallbacks
 {
@@ -49,7 +49,12 @@ public class TerminusConnection implements INetworkCallbacks
 	private String eventIPAddress;
 	private int eventPort;
 	
-	private boolean isConsumer;
+	/*
+	 * Fields for registration
+	 */
+	private boolean isConsumer = false;
+	private String regLocation = "";
+	private String regNickname = "";
 	
 	/*
 	 * This indicates we clicked the disconnect button vs. losing
@@ -67,14 +72,22 @@ public class TerminusConnection implements INetworkCallbacks
 		this.callbacks = c;
 		curConnectionState = ConnectionState.Disconnected;
 		curRegistrationState = RegistrationState.Unregistered;
-		isConsumer = false;
 		setUserID(context);
 	}
 	
-	public TerminusConnection(INetworkCallbacks c, Context context, boolean isConsumerApp)
+	public void setConsumer(boolean isConsumerApp)
 	{
-		this(c, context);
 		this.isConsumer = isConsumerApp;
+	}
+	
+	public void setNickname(String nickname)
+	{
+		regNickname = nickname;
+	}
+	
+	public void setLocation(String location)
+	{
+		regLocation = location;
 	}
 	
 	private void setUserID(Context c)
@@ -358,6 +371,8 @@ public class TerminusConnection implements INetworkCallbacks
 		else
 			rm.setRegistrationType(RegisterMessage.REG_TYPE_EVENT);
 		
+		rm.setLocation(regLocation);
+		rm.setNickname(regNickname);
 		this.terminusClient.sendMessage(rm);
 	}
 	

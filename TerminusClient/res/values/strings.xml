@@ -16,6 +16,8 @@
 	
 	<string name="hint_ip">Enter IP Address</string>
 	<string name="hint_port">Enter Port Number</string>
+	<string name="hint_location">Enter Location</string>
+	<string name="hint_nickname">Enter Nickname</string>
 	
 	<string name="camera_opt_none">No Camera</string>
 	<string name="camera_opt_native">OpenCV NativeCameraView</string>

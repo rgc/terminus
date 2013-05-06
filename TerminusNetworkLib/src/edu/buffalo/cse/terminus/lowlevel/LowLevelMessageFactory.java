@@ -2,6 +2,7 @@ package edu.buffalo.cse.terminus.lowlevel;
 
 import edu.buffalo.cse.terminus.lowlevel.LowLevelRegisterMessage;
 import edu.buffalo.cse.terminus.lowlevel.LowLevelTestMessage;
+import edu.buffalo.cse.terminus.messages.AlertMessage;
 import edu.buffalo.cse.terminus.messages.UnregisterMessage;
 import edu.buffalo.cse.terminus.messages.EventMessage;
 import edu.buffalo.cse.terminus.messages.ITerminusMessageFactory;
@@ -39,5 +40,11 @@ public class LowLevelMessageFactory implements ITerminusMessageFactory
 	public UnregisterMessage getUnregisterMessage(String id) 
 	{
 		return new LowLevelUnregisterMessage(id);
+	}
+
+	@Override
+	public AlertMessage getAlertMessage(String id) 
+	{
+		return new LowLevelAlertMessage(id);
 	}
 }

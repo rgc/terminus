@@ -50,10 +50,20 @@ public class SettingsActivity extends Activity
 		TerminusSettings settings = new TerminusSettings();
 		settings.retrieve(this);
 		
+		loadMiscSettings(settings);
 		loadNetworkSettings(settings);
 		loadCameraSettings(settings);
 		loadSoundSettings(settings);
 		loadSensorSettings(settings);
+	}
+	
+	private void loadMiscSettings(TerminusSettings settings)
+	{
+		EditText et = (EditText) findViewById(R.id.location);
+		et.setText(settings.location);
+		
+		et = (EditText) findViewById(R.id.nickname);
+		et.setText(settings.nickname);
 	}
 	
 	private void loadNetworkSettings(TerminusSettings settings)
@@ -147,6 +157,7 @@ public class SettingsActivity extends Activity
 		
 		try
 		{
+			saveMiscSettings(settings);
 			saveNetworkSettings(settings);
 			saveCameraSettings(settings);
 			saveSoundSettings(settings);
@@ -161,6 +172,15 @@ public class SettingsActivity extends Activity
 		Intent intent = new Intent();
 		setResult(RESULT_OK, intent);
 		finish();
+	}
+	
+	private void saveMiscSettings(TerminusSettings settings)
+	{
+		EditText et = (EditText) findViewById(R.id.location);
+		settings.location = et.getText().toString();
+		
+		et = (EditText) findViewById(R.id.nickname);
+		settings.nickname = et.getText().toString();
 	}
 	
 	private void saveNetworkSettings(TerminusSettings settings) throws Exception

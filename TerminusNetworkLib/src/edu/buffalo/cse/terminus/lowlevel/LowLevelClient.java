@@ -6,7 +6,7 @@ import java.net.*;
 
 
 import edu.buffalo.cse.terminus.messages.TerminusMessage;
-import edu.cse.buffalo.edu.terminus.clientlib.ATerminusClient;
+import edu.cse.buffalo.terminus.clientlib.ATerminusClient;
 
 public class LowLevelClient extends ATerminusClient
 {

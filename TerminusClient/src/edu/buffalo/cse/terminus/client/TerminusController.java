@@ -9,8 +9,8 @@ import edu.buffalo.cse.terminus.client.sensors.ICameraCallbacks;
 import edu.buffalo.cse.terminus.client.sensors.*;
 import edu.buffalo.cse.terminus.lowlevel.LowLevelImageMessage;
 import edu.buffalo.cse.terminus.messages.EventMessage;
-import edu.cse.buffalo.edu.terminus.clientlib.INetworkCallbacks;
-import edu.cse.buffalo.edu.terminus.clientlib.TerminusConnection;
+import edu.cse.buffalo.terminus.clientlib.INetworkCallbacks;
+import edu.cse.buffalo.terminus.clientlib.TerminusConnection;
 
 public class TerminusController implements ICameraCallbacks
 {
@@ -56,6 +56,8 @@ public class TerminusController implements ICameraCallbacks
 		
 		this.settings = settings;
 		connection = new TerminusConnection(networkCallbacks, a);
+		connection.setLocation(settings.location);
+		connection.setNickname(settings.nickname);
 		
 		sensorManager = new TerminusSensorManager(settings, listener, this, activity);
 		//sensorManager.createSoundAlgos();

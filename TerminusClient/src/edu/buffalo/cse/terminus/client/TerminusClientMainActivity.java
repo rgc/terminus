@@ -27,7 +27,7 @@ import edu.buffalo.cse.terminus.client.sensors.CameraAlgo;
 import edu.buffalo.cse.terminus.client.sensors.CameraOpenCVAlgoJava;
 import edu.buffalo.cse.terminus.client.sensors.CameraOpenCVAlgoNative;
 import edu.buffalo.cse.terminus.client.sensors.SoundAlgo;
-import edu.cse.buffalo.edu.terminus.clientlib.INetworkCallbacks;
+import edu.cse.buffalo.terminus.clientlib.INetworkCallbacks;
 
 public class TerminusClientMainActivity extends Activity implements INetworkCallbacks, SensorEventListener
 {	

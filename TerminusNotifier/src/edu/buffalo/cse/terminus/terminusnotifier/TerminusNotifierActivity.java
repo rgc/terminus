@@ -1,5 +1,8 @@
 package edu.buffalo.cse.terminus.terminusnotifier;
 
+import java.text.SimpleDateFormat;
+import java.util.Date;
+
 import android.os.Bundle;
 import android.os.IBinder;
 import android.app.Activity;
@@ -76,8 +79,6 @@ public class TerminusNotifierActivity extends Activity
         		tvNetwork.setText("Disconnected");
         		tvNetwork.setTextColor(Color.RED);
         	}
-        	
-        	tvLastEvent.setText(notifierService.getLastEventTime());
     	}
     	else
     	{
@@ -87,7 +88,24 @@ public class TerminusNotifierActivity extends Activity
         	tvNetwork.setTextColor(Color.RED);
     	}
     	
-    	tvLastEvent.setText("not available");
+    	if (notifierService != null)
+    	{
+	    	Date lastDate = notifierService.getLastEventTime();
+	    	
+	    	if (lastDate == null)
+	    	{
+	    		tvLastEvent.setText("Not available");
+	    	}
+	    	else
+	    	{
+	    		SimpleDateFormat dateFormat = new SimpleDateFormat("MM/dd/yyyy HH:mm:ss");
+	            tvLastEvent.setText(dateFormat.format(lastDate));
+	    	}
+    	}
+    	else
+    	{
+    		tvLastEvent.setText("Not available");
+    	}
     }
     
 	@Override

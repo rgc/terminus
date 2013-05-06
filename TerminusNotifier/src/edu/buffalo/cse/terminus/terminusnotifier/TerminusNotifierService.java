@@ -3,10 +3,12 @@ package edu.buffalo.cse.terminus.terminusnotifier;
 import java.io.IOException;
 import java.net.SocketTimeoutException;
 import java.net.UnknownHostException;
+import java.util.Date;
 
 import edu.buffalo.cse.terminus.messages.TerminusMessage;
-import edu.cse.buffalo.edu.terminus.clientlib.INetworkCallbacks;
-import edu.cse.buffalo.edu.terminus.clientlib.TerminusConnection;
+import edu.buffalo.cse.terminus.messages.AlertMessage;
+import edu.cse.buffalo.terminus.clientlib.INetworkCallbacks;
+import edu.cse.buffalo.terminus.clientlib.TerminusConnection;
 
 import android.app.NotificationManager;
 import android.app.PendingIntent;
@@ -55,6 +57,7 @@ public class TerminusNotifierService extends Service implements INetworkCallback
 	private Settings settings;
 	
 	private TerminusConnection connection;
+	private Date lastEvent = null;
 	
 	public class LocalBinder extends Binder
 	{
@@ -71,9 +74,9 @@ public class TerminusNotifierService extends Service implements INetworkCallback
 		return connection.isConnected();
 	}
 	
-	public String getLastEventTime()
+	public Date getLastEventTime()
 	{
-		return "not available";
+		return lastEvent;
 	}
 	
 	////////////////////////////////////////////////////////////////////////////////////////
@@ -86,7 +89,8 @@ public class TerminusNotifierService extends Service implements INetworkCallback
         settings.retrieve(this);
         
         isRunning = true;
-        connection = new TerminusConnection(this, this, true);
+        connection = new TerminusConnection(this, this);
+        connection.setConsumer(true);
         connection.connect(settings.ipAddress, settings.port);
         
         // Tell the user we started.
@@ -113,20 +117,20 @@ public class TerminusNotifierService extends Service implements INetworkCallback
 		return binder;
 	}
 	
-	private void showNotification(String message)
+	private void showNotification(String title, String message, String url)
 	{	
 		Uri notificationSound = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
 		
 		NotificationCompat.Builder mBuilder =
 	        new NotificationCompat.Builder(this)
 	        .setSmallIcon(R.drawable.ic_launcher)
-	        .setContentTitle("Ping Received!")
+	        .setContentTitle(title)
 	        .setContentText(message)
 	        .setAutoCancel(true)
 	        .setVibrate(vibPattern)
 	        .setSound(notificationSound);
 		
-		Intent notificationIntent = new Intent(Intent.ACTION_VIEW, Uri.parse("http://www.cnn.com"));
+		Intent notificationIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
 		PendingIntent contentIntent = PendingIntent.getActivity(this, 0, notificationIntent, 0);
 		mBuilder.setContentIntent(contentIntent);
 		
@@ -134,6 +138,28 @@ public class TerminusNotifierService extends Service implements INetworkCallback
 		    (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
 		
 		mNotificationManager.notify(NOTIFICATION_ID, mBuilder.build());
+	}
+	
+	private void alertReceived(AlertMessage alert)
+	{
+		lastEvent = new Date();
+		
+		String title = "Event Detected!";
+		
+		String location;
+		if (!alert.getLocation().isEmpty())
+			location = alert.getLocation();
+		else
+			location = "Unknown";
+		
+		String device;
+		if (!alert.getLocation().isEmpty())
+			device = alert.getNickname();
+		else
+			device = "Device";
+		
+		String alertMessage = "Detected in " + location + " by " + device;
+		this.showNotification(title, alertMessage, alert.getURL());
 	}
 	
 	@Override
@@ -175,9 +201,9 @@ public class TerminusNotifierService extends Service implements INetworkCallback
 	@Override
 	public void onMessageReceived(TerminusMessage msg) {
 		
-		if (msg.getMessageType() == TerminusMessage.MSG_EVENT)
+		if (msg.getMessageType() == TerminusMessage.MSG_ALERT)
 		{
-			this.showNotification("New Event!");
+			alertReceived((AlertMessage) msg);
 		}
 		
 	}

@@ -56,6 +56,11 @@ Narrow the scope of the selectors to prevent other panels being affected by the 
 /* Use the ui-body class of your page theme (ui-body-d in this demo) to set a background image.
 This class will be added to the content wrapper, while the page itself gets the same background
 as the panel before opening the panel. */
+#dashboard .ui-body-d {
+    background-image: url(../../_assets/img/bg-pattern.png);
+    background-repeat: repeat-x;
+    background-position: left bottom;
+}
 /* Styling of the page contents */
 .article p {
     margin: 0 0 1em;

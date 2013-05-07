@@ -34,11 +34,11 @@ public class Terminus implements ITerminusMsgCallback
 			System.exit(1);
 			return;
 		}	
-		
+
 		tserver 	= new EventServer(this);
         dashboard 	= new TerminusDashboard();
         // use high port since root needed for lower range
-        webserver 	= new TerminusWebServer(6900);
+        webserver 	= new TerminusWebServer(6901);
                 
         recordVideo = new HashMap<String, Boolean>();
         media		= new HashMap<String, TerminusMediaWriter>();

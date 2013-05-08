@@ -162,7 +162,6 @@ public class EventServer implements ITerminusMsgCallback, ITerminusServer
 				break;
 				
 			case TerminusMessage.MSG_EVENT:
-				processEvent(message, connection);
 				break;
 				
 			default:
@@ -204,28 +203,25 @@ public class EventServer implements ITerminusMsgCallback, ITerminusServer
 		connection.sendMessage(response);
 	}
 	
-	private void processEvent(TerminusMessage message, ATerminusConnection connection)
-	{
-		EventMessage em = (EventMessage) message;
-		if (em.getEventMsgType() == EventMessage.EVENT_START)
-		{
-			alertConsumers(connection, "http://www.cse.buffalo.edu");
-		}
-	}
-	
-	private void alertConsumers(ATerminusConnection connection, String url)
+	public void alertConsumers(String nodeId, String url)
 	{
 		//For now, we'll send the connection id of the node that triggered the event.
 		//this might come in handy later if we need to add messages and do some kind
 		//of look up.
-		AlertMessage message = messageFactory.getAlertMessage(connection.getID());
-		message.setLocation(connection.getLocation());
-		message.setNickname(connection.getNickname());
-		message.setURL(url);
 		
-		for (ATerminusConnection c : consumerSessions.values())
+		ATerminusConnection originator = this.sessions.get(nodeId);
+		
+		if (originator != null)
 		{
-			c.sendMessage(message);
+			AlertMessage message = messageFactory.getAlertMessage(originator.getID());
+			message.setLocation(originator.getLocation());
+			message.setNickname(originator.getNickname());
+			message.setURL(url);
+			
+			for (ATerminusConnection c : consumerSessions.values())
+			{
+				c.sendMessage(message);
+			}
 		}
 	}
 	

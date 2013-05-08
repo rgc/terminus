@@ -7,7 +7,7 @@ import edu.buffalo.cse.terminus.client.TerminusController;
 
 public class AccelCDFAlgo extends SensorAlgo 
 {
-	public static int VIBRATION_FACTOR = 1;
+	public static float VIBRATION_FACTOR = (float) .05;
 	public static boolean FirstAclPri = false;
 	
 	//raw sensor data
@@ -16,6 +16,7 @@ public class AccelCDFAlgo extends SensorAlgo
 	private float[] zacel;
 	private long[] time;
 	public static float t;
+	public static float d;
 	
 	public AccelCDFAlgo(TerminusController c) 
 	{
@@ -46,7 +47,8 @@ public class AccelCDFAlgo extends SensorAlgo
 		float dx = CDFFunctions.CDF1O8(xacel, t);
 		float dy = CDFFunctions.CDF1O8(yacel, t);
 		float dz = CDFFunctions.CDF1O8(zacel, t);
-
+		d = dx;
+		
 		//check for large change in some direction
 		if((dx > VIBRATION_FACTOR)||(dy > VIBRATION_FACTOR)||(dz > VIBRATION_FACTOR))
 		{

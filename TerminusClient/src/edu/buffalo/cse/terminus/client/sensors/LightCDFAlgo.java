@@ -7,7 +7,7 @@ import edu.buffalo.cse.terminus.client.TerminusController;
 
 public class LightCDFAlgo extends SensorAlgo 
 {
-	public static int LIGHT_FACTOR = 1;
+	public static float LIGHT_FACTOR = 20;
 	public static boolean FirstLitPri = false;
 	
 	//raw sensor data

@@ -220,7 +220,7 @@ public class SettingsActivity extends Activity
 		
 		for (int i = 0 ; i < sensorCheckBoxes.size(); i++)
 		{
-			TerminusSensorManager.setSensorSensitivity(SensorSensitivitys.get(i).sensorType, Integer.valueOf(SensorSensitivitys.get(i).getText().toString()));
+			TerminusSensorManager.setSensorSensitivity(SensorSensitivitys.get(i).sensorType, Float.valueOf(SensorSensitivitys.get(i).getText().toString()));
 			if (sensorCheckBoxes.get(i).isChecked())
 				settings.sensorList.add(sensorCheckBoxes.get(i).sensorType);
 		}
@@ -231,7 +231,7 @@ public class SettingsActivity extends Activity
 		CheckBox cb = (CheckBox) findViewById(R.id.cbSound);
 		settings.useSound = cb.isChecked();
 		EditText et = (EditText) findViewById(R.id.soundSens);
-		TerminusSensorManager.setSoundSensitivity(Integer.valueOf(et.getText().toString()));
+		TerminusSensorManager.setSoundSensitivity(Float.valueOf(et.getText().toString()));
 		et = (EditText) findViewById(R.id.soundInterval);
 		TerminusSensorManager.setSoundInterval(Integer.valueOf(et.getText().toString()));
 		//if(cb.isChecked())

@@ -7,7 +7,7 @@ import edu.buffalo.cse.terminus.client.TerminusController;
 
 public class MagCDFAlgo extends SensorAlgo 
 {
-	public static int MAGNET_FACTOR = 1;
+	public static float MAGNET_FACTOR = (float) .08;
 	public static boolean FirstMagPri = false;
 	
 	//raw sensor data

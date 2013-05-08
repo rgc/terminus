@@ -6,8 +6,8 @@ import java.net.UnknownHostException;
 
 import android.app.Activity;
 
-import edu.buffalo.cse.terminus.client.network.INetworkCallbacks;
 import edu.buffalo.cse.terminus.messages.TerminusMessage;
+import edu.cse.buffalo.terminus.clientlib.INetworkCallbacks;
 
 public class UIEventBridge implements INetworkCallbacks
 {

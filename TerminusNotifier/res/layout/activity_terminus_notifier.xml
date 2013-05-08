@@ -1,0 +1,104 @@
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:paddingBottom="@dimen/activity_vertical_margin"
+    android:paddingLeft="@dimen/activity_horizontal_margin"
+    android:paddingRight="@dimen/activity_horizontal_margin"
+    android:paddingTop="@dimen/activity_vertical_margin"
+    android:orientation="vertical"
+    tools:context=".TerminusNotifierActivity" >
+
+    <LinearLayout
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="@dimen/after_label_space" >
+    	
+        <TextView
+            android:layout_width="150dp"
+            android:layout_height="wrap_content"
+            android:textAppearance="?android:attr/textAppearanceMedium"
+            android:text="@string/service_status" />
+        
+        <TextView
+            android:id="@+id/tvServiceStatus"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textAppearance="?android:attr/textAppearanceMedium" />
+        
+   	</LinearLayout>
+    
+    <LinearLayout
+     android:layout_width="fill_parent"
+     android:layout_height="wrap_content"
+     android:layout_marginBottom="@dimen/after_label_space" >
+	    	
+        <TextView
+            android:layout_width="150dp"
+            android:layout_height="wrap_content"
+            android:textAppearance="?android:attr/textAppearanceMedium"
+            android:text="@string/network_status" />
+
+        <TextView
+            android:id="@+id/tvNetworkStatus"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textAppearance="?android:attr/textAppearanceMedium" />
+        
+   	</LinearLayout>
+    
+    <LinearLayout
+     android:layout_width="fill_parent"
+     android:layout_height="wrap_content"
+     android:layout_marginBottom="@dimen/after_label_space" >
+	    	
+        <TextView
+            android:layout_width="150dp"
+            android:layout_height="wrap_content"
+            android:textAppearance="?android:attr/textAppearanceMedium"
+            android:text="@string/last_event" />
+
+        <TextView
+            android:id="@+id/tvLastEvent"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textAppearance="?android:attr/textAppearanceMedium" />
+        
+   	</LinearLayout>
+   	
+    <LinearLayout 
+	    android:layout_width="match_parent" 
+	    android:layout_height="2dp"
+	    android:layout_marginTop="@dimen/line_buffer"
+	    android:layout_marginBottom="@dimen/line_buffer"
+	    android:background="@android:color/darker_gray" />
+    
+    
+    <!-- Buttons -->
+    
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content" 
+        android:gravity="center">
+        
+        <Button
+            android:layout_width="95dp"
+            android:layout_height="wrap_content"
+            android:onClick="btnSettings_Click"
+            android:text="@string/button_settings" />
+        
+        <Button
+            android:layout_width="95dp"
+            android:layout_height="wrap_content"
+            android:onClick="btnStartService_Click"
+            android:text="@string/button_start" />
+        
+        <Button
+            android:layout_width="95dp"
+            android:layout_height="wrap_content"
+            android:onClick="btnStopService_Click"
+            android:text="@string/button_stop" />
+        
+    </LinearLayout>
+    
+</LinearLayout>

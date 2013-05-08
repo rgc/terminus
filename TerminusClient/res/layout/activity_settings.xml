@@ -36,7 +36,7 @@
 	    android:layout_width="match_parent"
         android:layout_height="0dp"
 	    android:layout_weight="1.0"
-	    android:layout_marginBottom="15dp">    
+	    android:layout_marginBottom="15dp">
 	    
 	    <LinearLayout 
 	        android:layout_height="wrap_content"
@@ -44,7 +44,21 @@
 	        android:orientation="vertical"
 	        android:layout_marginLeft="10dp"
 	        android:layout_marginRight="10dp" >
-		    
+		   
+	        <EditText
+				android:id="@+id/location"
+				android:layout_width="fill_parent"
+				android:layout_height="wrap_content"
+				android:layout_marginTop="@dimen/before_heading_margin"
+		     	android:hint="@string/hint_location" />
+	        
+	        <EditText
+				android:id="@+id/nickname"
+				android:layout_width="fill_parent"
+				android:layout_height="wrap_content"
+				android:layout_marginTop="@dimen/before_heading_margin"
+		     	android:hint="@string/hint_nickname" />
+	        
 			<!-- Network Settings -->
 			
 			<LinearLayout

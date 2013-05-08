@@ -1,14 +1,12 @@
-package edu.buffalo.cse.terminus.client.network.lowlevel;
+package edu.buffalo.cse.terminus.lowlevel;
 
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.*;
 
-import edu.buffalo.cse.terminus.client.network.ATerminusClient;
-import edu.buffalo.cse.terminus.lowlevel.ILowLevelMessage;
-import edu.buffalo.cse.terminus.lowlevel.LowLevelReader;
 
 import edu.buffalo.cse.terminus.messages.TerminusMessage;
+import edu.cse.buffalo.terminus.clientlib.ATerminusClient;
 
 public class LowLevelClient extends ATerminusClient
 {

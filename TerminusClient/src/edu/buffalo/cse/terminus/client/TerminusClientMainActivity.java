@@ -5,7 +5,6 @@ import java.io.IOException;
 import java.net.SocketTimeoutException;
 import java.net.UnknownHostException;
 
-import edu.buffalo.cse.terminus.client.network.INetworkCallbacks;
 import edu.buffalo.cse.terminus.messages.RegistrationResponse;
 import edu.buffalo.cse.terminus.messages.TerminusMessage;
 import android.app.Activity;
@@ -28,6 +27,7 @@ import edu.buffalo.cse.terminus.client.sensors.CameraAlgo;
 import edu.buffalo.cse.terminus.client.sensors.CameraOpenCVAlgoJava;
 import edu.buffalo.cse.terminus.client.sensors.CameraOpenCVAlgoNative;
 import edu.buffalo.cse.terminus.client.sensors.SoundAlgo;
+import edu.cse.buffalo.terminus.clientlib.INetworkCallbacks;
 
 public class TerminusClientMainActivity extends Activity implements INetworkCallbacks, SensorEventListener
 {	

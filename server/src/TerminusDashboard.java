@@ -4,6 +4,7 @@ import java.util.*;
 import javax.swing.table.AbstractTableModel;
 
 import edu.buffalo.cse.terminus.messages.EventMessage;
+import edu.buffalo.cse.terminus.messages.RegisterMessage;
 import edu.buffalo.cse.terminus.messages.TerminusMessage;
 
 import java.util.ArrayList;
@@ -14,13 +15,21 @@ import java.text.SimpleDateFormat;
 
 public class TerminusDashboard extends JPanel 
 {
+	private class NodeInfo
+	{
+		public String id;
+		public String location;
+		public String nickname;
+	}
+	
 	private JFrame frame;
 	private JTable table;
 	private JDesktopPane desktop;
 	private JSplitPane splitPane;
 	private EventTableModel tableModel;
 	private HashMap<String, NodeScreenFrame> nodeScreens;    	
-
+	private HashMap<String, NodeInfo> nodeInfo;
+	
 	public TerminusDashboard() {
 
 		// event table model
@@ -58,7 +67,7 @@ public class TerminusDashboard extends JPanel
 		frame.setVisible(true);
 
 		nodeScreens = new HashMap<String, NodeScreenFrame>();
-		
+		nodeInfo = new HashMap<String, TerminusDashboard.NodeInfo>();
 	}
 	
 	public void addMessage(TerminusMessage message) 
@@ -77,6 +86,7 @@ public class TerminusDashboard extends JPanel
 		{
 		case TerminusMessage.MSG_REGISTER:
 			type = "Reg";
+			this.addNode((RegisterMessage) message);
 			break;
 	
 		case TerminusMessage.MSG_UNREGISTER:
@@ -124,7 +134,15 @@ public class TerminusDashboard extends JPanel
 		String id = event.getID();
 		if (!nodeScreens.containsKey(id)) 
 		{
-			NodeScreenFrame tframe = new NodeScreenFrame(id);
+			String title = id;
+			NodeInfo info = nodeInfo.get(id);
+			
+			if (info != null)
+			{
+				title = "Loc: " + info.location + "  Device: " + info.nickname;
+			}
+			
+			NodeScreenFrame tframe = new NodeScreenFrame(title);
 			tframe.updateEvent(event);
 		    desktop.add(tframe);
 		    tile(desktop);
@@ -160,6 +178,24 @@ public class TerminusDashboard extends JPanel
 		if(nodeScreens.containsKey(nodeId)) {
 			nodeScreens.get(nodeId).setVisible(false);
 		}
+		
+		if (nodeInfo.containsKey(nodeId))
+		{
+			nodeInfo.remove(nodeId);
+		}
+	}
+	
+	public void addNode(RegisterMessage rm)
+	{
+		if (!nodeInfo.containsKey(rm.getID()))
+		{
+			NodeInfo info = new NodeInfo();
+			info.id = rm.getID();
+			info.location = rm.getLocation();
+			info.nickname = rm.getNickname();
+			
+			nodeInfo.put(info.id, info);
+		}
 	}
 	
 	public static void tile( JDesktopPane desktopPane ) {
@@ -188,8 +224,10 @@ public class TerminusDashboard extends JPanel
 		
 		private JLabel picLabel;
 		private NodeEventTableModel nodeTableModel;
-		NodeScreenFrame(String nodeId) {
-			super(	nodeId,
+		
+		NodeScreenFrame(String title) 
+		{
+			super(	title,
 					false,	// resize
 					true,   // close
 					false,  // maximize

@@ -15,7 +15,10 @@ import shared.ATerminusConnection;
 import shared.ITerminusServer;
 import shared.ServerCloseException;
 import edu.buffalo.cse.terminus.lowlevel.LowLevelMessageFactory;
+import edu.buffalo.cse.terminus.messages.AlertMessage;
+import edu.buffalo.cse.terminus.messages.EventMessage;
 import edu.buffalo.cse.terminus.messages.ITerminusMessageFactory;
+import edu.buffalo.cse.terminus.messages.RegisterMessage;
 import edu.buffalo.cse.terminus.messages.RegistrationResponse;
 import edu.buffalo.cse.terminus.messages.TerminusMessage;
 import edu.buffalo.cse.terminus.messages.UnregisterMessage;
@@ -44,6 +47,7 @@ public class EventServer implements ITerminusMsgCallback, ITerminusServer
 	 * This may be useful for broadcasting messages.
 	 */
 	private final ConcurrentHashMap<String, ATerminusConnection> sessions;
+	private final ConcurrentHashMap<String, ATerminusConnection> consumerSessions;
 	
 	private String eventServerIP;
 	private ImageServer imageServer;
@@ -52,6 +56,7 @@ public class EventServer implements ITerminusMsgCallback, ITerminusServer
 	{
 		this.messageCallback = msgCallback;
 		sessions = new ConcurrentHashMap<String, ATerminusConnection>();
+		consumerSessions = new ConcurrentHashMap<String, ATerminusConnection>();
 		eventCom = new LowLevelServer(this, EVENT_PORT);
 		imageServer = new ImageServer(this);
 		//eventCom = new AkkaServer(this, EVENT_PORT);
@@ -131,7 +136,7 @@ public class EventServer implements ITerminusMsgCallback, ITerminusServer
 		{
 			/*
 			 * No session established for this id.
-			 * We'll send a Unregister message and won't take this message any further 
+			 * We'll send an Unregister message and won't take this message any further 
 			 */
 			UnregisterMessage urm = messageFactory.getUnregisterMessage(message.getID());
 			connection.sendMessage(urm);
@@ -149,7 +154,7 @@ public class EventServer implements ITerminusMsgCallback, ITerminusServer
 				break;
 				
 			case TerminusMessage.MSG_REGISTER:
-				registrationRequest(message, connection);
+				registrationRequest((RegisterMessage) message, connection);
 				break;
 			
 			case TerminusMessage.MSG_UNREGISTER:
@@ -170,7 +175,7 @@ public class EventServer implements ITerminusMsgCallback, ITerminusServer
 		}
 	}
 	
-	private void registrationRequest(TerminusMessage message, ATerminusConnection connection)
+	private void registrationRequest(RegisterMessage message, ATerminusConnection connection)
 	{
 		/*
 		 * Right now we simply accept the registration and
@@ -188,6 +193,11 @@ public class EventServer implements ITerminusMsgCallback, ITerminusServer
 		sessions.put(id, connection);
 		
 		connection.setID(id);
+		connection.setLocation(message.getLocation());
+		connection.setNickname(message.getNickname());
+		
+		if (message.getRegistrationType() == RegisterMessage.REG_TYPE_CONSUMER)
+			consumerSessions.put(id, connection);
 		
 		RegistrationResponse response = messageFactory.getRegistrationResponse(id);
 		response.setResult(RegistrationResponse.REGISTRATION_SUCCESS);
@@ -196,9 +206,27 @@ public class EventServer implements ITerminusMsgCallback, ITerminusServer
 	
 	private void processEvent(TerminusMessage message, ATerminusConnection connection)
 	{
-		//TODO do something with the event!
-		//		Alternatively, just register all handlers for 
-		//		events to receive callbacks.
+		EventMessage em = (EventMessage) message;
+		if (em.getEventMsgType() == EventMessage.EVENT_START)
+		{
+			alertConsumers(connection, "http://www.cse.buffalo.edu");
+		}
+	}
+	
+	private void alertConsumers(ATerminusConnection connection, String url)
+	{
+		//For now, we'll send the connection id of the node that triggered the event.
+		//this might come in handy later if we need to add messages and do some kind
+		//of look up.
+		AlertMessage message = messageFactory.getAlertMessage(connection.getID());
+		message.setLocation(connection.getLocation());
+		message.setNickname(connection.getNickname());
+		message.setURL(url);
+		
+		for (ATerminusConnection c : consumerSessions.values())
+		{
+			c.sendMessage(message);
+		}
 	}
 	
 	/*
@@ -223,6 +251,9 @@ public class EventServer implements ITerminusMsgCallback, ITerminusServer
 			sessions.remove(id);
 			connection.shutdown();
 		}
+		
+		if (consumerSessions.containsKey(id))
+			consumerSessions.remove(id);
 	}
 	
 	// /////////////////////////// NETWORK EVENTS /////////////////////////////
@@ -231,14 +262,8 @@ public class EventServer implements ITerminusMsgCallback, ITerminusServer
 	@Override
 	public synchronized void messageReceived(ATerminusConnection connection, TerminusMessage msg)
 	{
-		/*
-		 * Just queue the message, it'll get processed by the processing thread.
-		 */
 		if (msg != null)
 		{
-			//eventQueue.add(new QueuedMessage(connection, msg));
-			//TODO: We could run this, or just let any long-running processes do so
-			
 			processMessage(msg, connection);
 		}
 	}

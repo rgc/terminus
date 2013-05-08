@@ -1,4 +1,4 @@
-package edu.buffalo.cse.terminus.client.network;
+package edu.cse.buffalo.terminus.clientlib;
 
 import java.io.IOException;
 import java.net.SocketTimeoutException;

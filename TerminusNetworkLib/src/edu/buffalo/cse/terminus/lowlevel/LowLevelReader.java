@@ -176,7 +176,11 @@ public class LowLevelReader
 			case TerminusMessage.MSG_TEST:
 				m = new LowLevelTestMessage(id);
 				break;
-
+			
+			case TerminusMessage.MSG_ALERT:
+				m = new LowLevelAlertMessage(id);
+				break;
+				
 			default:
 				return null;
 		}

@@ -17,6 +17,8 @@ public abstract class ATerminusConnection
 	protected String uid;
 	protected InetAddress address;
 	protected int port;
+	protected String location;
+	protected String nickname;
 	
 	/*
 	 * Abstract
@@ -60,5 +62,25 @@ public abstract class ATerminusConnection
 	public void setPort(int p)
 	{
 		this.port = p;
+	}
+	
+	public String getLocation()
+	{
+		return location;
+	}
+	
+	public void setLocation(String l)
+	{
+		location = l;
+	}
+	
+	public String getNickname()
+	{
+		return nickname;
+	}
+	
+	public void setNickname(String n)
+	{
+		nickname = n;
 	}
 }

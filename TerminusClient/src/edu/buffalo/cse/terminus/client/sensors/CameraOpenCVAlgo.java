@@ -10,6 +10,7 @@ import org.opencv.android.OpenCVLoader;
 import org.opencv.core.Core;
 import org.opencv.core.Mat;
 import org.opencv.core.MatOfByte;
+import org.opencv.core.MatOfInt;
 import org.opencv.core.MatOfPoint;
 import org.opencv.core.Scalar;
 import org.opencv.core.Rect;
@@ -173,12 +174,12 @@ public abstract class CameraOpenCVAlgo extends CameraAlgo implements CvCameraVie
     	// the apply function will throw an error if you don't feed it an RGB image
     	// but it exports a gray image, so we need to convert the gray MAT
     	// into RGB before we apply it to the foreground mask
-        Imgproc.cvtColor(mGray, mRgb, Imgproc.COLOR_GRAY2RGB);
+    	Imgproc.cvtColor(mGray, mRgb, Imgproc.COLOR_GRAY2RGB);
         // 5.2 fps here
-                
+        
         //apply() exports a gray image by definition
-		mogBgSub.apply(mRgb, mFGMask, learningRate);
-		
+    	mogBgSub.apply(mRgb, mFGMask, learningRate);
+    	
 		// 0.27 fps here, ugh.
 		
 		// blur the fgmask to reduce the number of contours
@@ -217,7 +218,9 @@ public abstract class CameraOpenCVAlgo extends CameraAlgo implements CvCameraVie
 				if(controller != null ) {
 					hadMotionLastFrame  = true;
 					MatOfByte matOfByte = new MatOfByte();
-			        Highgui.imencode(".png", mGrayBox, matOfByte);
+					MatOfInt  params = new MatOfInt(Highgui.IMWRITE_JPEG_QUALITY, 50);
+					Highgui.imencode(".jpeg", mRgba, matOfByte, params);
+					//Highgui.imencode(".jpeg", mGrayBox, matOfByte, params);
 			        byte[] imageBytes = matOfByte.toArray();
 					controller.onCameraMotionDetected(imageBytes, getFPS());
 					
@@ -227,7 +230,9 @@ public abstract class CameraOpenCVAlgo extends CameraAlgo implements CvCameraVie
 				
 				// send a clean "unboxed" image
 				MatOfByte matOfByte = new MatOfByte();
-		        Highgui.imencode(".png", mGray, matOfByte);
+				MatOfInt  params = new MatOfInt(Highgui.IMWRITE_JPEG_QUALITY, 50);
+		        //Highgui.imencode(".jpeg", mRgba, matOfByte, params);
+		        Highgui.imencode(".jpeg", mGray, matOfByte, params);
 		        byte[] imageBytes = matOfByte.toArray();
 				controller.onCameraMotionDetected(imageBytes, getFPS());
 			}

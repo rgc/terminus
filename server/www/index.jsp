@@ -3,84 +3,47 @@
 <%@ page language="java" import="java.util.*" errorPage="" %>
 <%@ page language="java" import="java.sql.*" %>
 <%@ page import="org.sqlite.*" %>
-
-
-<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" 
-	"http://www.w3.org/TR/html4/loose.dtd">
-
-<html>
-<head>
-<title>Terminus</title>
-<link rel="stylesheet" href="http://code.jquery.com/mobile/1.3.1/jquery.mobile-1.3.1.min.css" />
-<link rel="stylesheet" href="css/terminus.css" />
-<script src="http://code.jquery.com/jquery-1.9.1.min.js"></script>
-<script src="http://code.jquery.com/mobile/1.3.1/jquery.mobile-1.3.1.min.js"></script>
-</head>
-
-<body>
-<div data-role="page" id="dashboard" data-theme="d" data-url="dashboard">
-    <div data-role="header" data-theme="c">
-        <h1>Dashboard</h1>
-        <a href="#left-panel" data-icon="bars" data-iconpos="notext" data-shadow="false" data-iconshadow="false">Menu</a>
-    </div><!-- /header -->
-    <div data-role="content">
-        <div class="article">
+<%@include file="header.jsp" %>
             <h2>Recent Video Events</h2>
-            <p>These are videos of recent events occurring on all security monitoring points...</p>
+            <p>These are videos of recent events occurring 
             <%
-                Class.forName("org.sqlite.JDBC");
-                Connection conn =
-                     DriverManager.getConnection("jdbc:sqlite:www/db/terminus.sqlite");
+            	String filter = "";
+            	
+            	if(request.getParameter("device") != null) {
+            		filter = " AND id=\"" + request.getParameter("device") + "\"";
+            		out.println(" <b>on device: " + request.getParameter("device") + "</b>");
+            	} else if(request.getParameter("location") != null) {
+            	filter = " AND location=\"" + request.getParameter("location") + "\"";
+            		out.println(" <b>in location: " + request.getParameter("location") + "</b>" );
+            	} else {
+            		out.println(" <b>at all security monitoring points</b>");
+            	}
+            
+            %>
+            
+            </p>
+            <%
+ 				//out.println(sql);
+ 				
                 Statement stat = conn.createStatement();
- 
-                ResultSet rs = stat.executeQuery("select * from event where type=\"Video\";");
+ 				String sql = "select * from event where type=\"Video\"" + filter;
+
+                ResultSet rs = stat.executeQuery(sql);
  
                 while (rs.next()) {
                 	String vid = rs.getString("mediapath");
                 	vid = vid.replaceAll("www/", ""); 
                     out.println("<p>");
                     out.println("Phone: " + rs.getString("id") + "<br/>");
-
-					out.println("<object data=\"" + vid + "\"></object>");
+                    
+                    out.println("<video width=\"800\" height=\"600\" controls><source src=\"" + vid + "\" type=\"video/mp4\"><object width=\"800\" height=\"600\" data=\"" + vid + "\"><embed width=\"800\" height=\"600\" src=\"" + vid + "\"></object></video>");
                     out.println("</p>");
+                    
                 }
  
                 rs.close();
-                conn.close();
+
             %>
 
-        </div><!-- /article -->
-    </div><!-- /content -->
-    <div data-role="panel" id="left-panel" data-theme="c">
-        <ul data-role="listview" data-theme="d">
-            <li data-icon="delete"><a href="#" data-rel="close">Close</a></li>
-            <li data-role="list-divider">Menu</li>
-            <li data-icon="home"><a href="index.jsp">Dashboard</a></li>
-        </ul>
-        <div data-role="collapsible" data-inset="false" data-iconpos="right" data-theme="d" data-content-theme="d">
-          <h3>Categories</h3>
-          <div data-role="collapsible-set" data-inset="false" data-iconpos="right" data-theme="b" data-content-theme="d">
-            <div data-role="collapsible">
-              <h3>Phones</h3>
-              <ul data-role="listview">
-                <li><a href="#">1</a></li>
-                <li><a href="#">2</a></li>
-                <li><a href="#">3</a></li>
-                <li><a href="#">4</a></li>
-              </ul>
-            </div><!-- /collapsible -->
-            <div data-role="collapsible">
-              <h3>Locations</h3>
-              <ul data-role="listview">
-                <li><a href="#">Room</a></li>
-                <li><a href="#">Den</a></li>
-                <li><a href="#">Kitchen</a></li>
-              </ul>
-            </div><!-- /collapsible -->
-          </div><!-- /collapsible-set -->
-        </div><!-- /collapsible -->
-    </div><!-- /panel -->
-</div>
+<%@include file="footer.jsp" %>
 
-</body>
-</html>

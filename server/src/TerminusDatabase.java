@@ -57,7 +57,7 @@ public class TerminusDatabase
 		      Statement statement = connection.createStatement();
 		      statement.setQueryTimeout(30);  // set timeout to 30 sec.
 
-		      statement.executeUpdate("create table event (ts timestamp, priority string, id string, type string, tag string, mediapath string)");
+		      statement.executeUpdate("create table event (ts timestamp, priority string, id string, type string, tag string, location string, mediapath string)");
 	    }
 	    catch(SQLException e)
 	    {
@@ -84,18 +84,19 @@ public class TerminusDatabase
 	
 	public void addEventRow(long ts, String priority, String id, String type)
 	{
-		addEventRow(ts,priority,id,type,"","");
+		addEventRow(ts,priority,id,type,"","Unknown","");
 	}
 	
-	public void addEventRow(long ts, String priority, String id, String type, String tag, String mediapath )
+	public void addEventRow(long ts, String priority, String id, String type, String tag, String location, String mediapath )
 	{
-		String insert = "insert into event (ts,priority,id,type,tag,mediapath) VALUES " +
+		String insert = "insert into event (ts,priority,id,type,tag,location, mediapath) VALUES " +
 						"(" + 
 						"\"" + ts + "\", " +
 						"\"" + priority + "\", " +
 						"\"" + id + "\", " +
 						"\"" + type + "\", " +
 						"\"" + tag + "\", " +
+						"\"" + location + "\", " +
 						"\"" + mediapath + "\""
 						+ ")";
 		//System.err.println(insert);

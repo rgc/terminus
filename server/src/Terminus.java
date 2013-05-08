@@ -175,7 +175,7 @@ public class Terminus implements ITerminusMsgCallback
 		if(media.containsKey(id)) {
 			if(media.get(id) != null) {
 				media.get(id).writeMedia();
-		        database.addEventRow(media.get(id).mediaEpoch(), "0", id, "Video", "", media.get(id).mediaPath());
+		        database.addEventRow(media.get(id).mediaEpoch(), "0", id, "Video", "", "Unknown", media.get(id).mediaPath());
 		        media.remove(id);
 
 			}

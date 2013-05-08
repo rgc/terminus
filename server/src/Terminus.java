@@ -21,6 +21,8 @@ public class Terminus implements ITerminusMsgCallback
 
 	private HashMap<String, Boolean> recordVideo;
 	private HashMap<String, TerminusMediaWriter> media;
+	
+	private int timeThreshSeconds;
 		
 	public Terminus(String[] args)
 	{
@@ -42,6 +44,9 @@ public class Terminus implements ITerminusMsgCallback
                 
         recordVideo = new HashMap<String, Boolean>();
         media		= new HashMap<String, TerminusMediaWriter>();
+        
+        // threshold in seconds for how long we record...
+        timeThreshSeconds = 20;
         
 		/* Start the server(s) */
 		
@@ -167,6 +172,18 @@ public class Terminus implements ITerminusMsgCallback
 			if(media.get(msg.getID()) != null) {
 				media.get(msg.getID()).updateMedia(msg.getImage());
 			}
+			
+			// now check if we've been recording from longer than xx seconds
+			
+			
+			long startTime = media.get(msg.getID()).mediaEpoch();
+			long currTime  = System.currentTimeMillis()/1000;
+			
+			if((currTime-startTime) > timeThreshSeconds) {
+				closeVideo(msg.getID());
+			}
+			
+			
 		}
 		
 	}

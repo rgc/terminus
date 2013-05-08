@@ -2,6 +2,8 @@
 
 <%@ page language="java" import="java.util.*" errorPage="" %>
 <%@ page language="java" import="java.sql.*" %>
+<%@ page language="java" import="java.text.SimpleDateFormat" %>
+
 <%@ page import="org.sqlite.*" %>
 <%@include file="header.jsp" %>
             <h2>Recent Video Events</h2>
@@ -26,7 +28,7 @@
  				//out.println(sql);
  				
                 Statement stat = conn.createStatement();
- 				String sql = "select * from event where type=\"Video\"" + filter;
+ 				String sql = "select ts, id,tag,location,mediapath,strftime('%m/%d/%Y %H:%M:%S', datetime(ts, 'unixepoch','localtime')) as tsf from event where type=\"Video\"" + filter + " order by ts DESC";
 
                 ResultSet rs = stat.executeQuery(sql);
  
@@ -34,6 +36,9 @@
                 	String vid = rs.getString("mediapath");
                 	vid = vid.replaceAll("www/", ""); 
                     out.println("<p>");
+                    
+                    out.println("Date/Time: <b>" + rs.getString("tsf") + "</b><br/>");
+                    
                     out.println("Phone: " + rs.getString("id") + "<br/>");
                     out.println("Nickname: " + rs.getString("tag") + "<br/>");
                     out.println("Location: " + rs.getString("location") + "<br/>");

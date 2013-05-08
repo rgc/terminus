@@ -42,7 +42,8 @@ public class TerminusMediaWriter
         writer.addVideoStream(0, 0, ICodec.ID.CODEC_ID_MPEG4, 
                    initImage.getWidth()/2, initImage.getHeight()/2);
 
-        startTime = System.nanoTime();
+        //startTime = System.nanoTime();
+        startTime = System.currentTimeMillis()/1000;
 
         updateMedia(initImage);
         

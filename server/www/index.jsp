@@ -35,6 +35,8 @@
                 	vid = vid.replaceAll("www/", ""); 
                     out.println("<p>");
                     out.println("Phone: " + rs.getString("id") + "<br/>");
+                    out.println("Nickname: " + rs.getString("tag") + "<br/>");
+                    out.println("Location: " + rs.getString("location") + "<br/>");
                     
                     out.println("<video width=\"800\" height=\"600\" controls><source src=\"" + vid + "\" type=\"video/mp4\"><object width=\"800\" height=\"600\" data=\"" + vid + "\"><embed width=\"800\" height=\"600\" src=\"" + vid + "\"></object></video>");
                     out.println("</p>");

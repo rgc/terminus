@@ -123,7 +123,7 @@ public class Terminus implements ITerminusMsgCallback
         String priority = String.valueOf(event.getTotalPriority());
         String id = event.getID();
         String type = "";
-        
+
         switch (event.getEventMsgType())
         {
         case EventMessage.EVENT_START:
@@ -175,7 +175,16 @@ public class Terminus implements ITerminusMsgCallback
 		if(media.containsKey(id)) {
 			if(media.get(id) != null) {
 				media.get(id).writeMedia();
-		        database.addEventRow(media.get(id).mediaEpoch(), "0", id, "Video", "", "Unknown", media.get(id).mediaPath());
+				
+				String tag      = id;
+				String location = "Unknown";
+				if (dashboard.getNodeInfo().containsKey(id))
+				{
+					tag      = dashboard.getNodeInfo().get(id).nickname;
+					location = dashboard.getNodeInfo().get(id).location;
+				}
+				
+		        database.addEventRow(media.get(id).mediaEpoch(), "0", id, "Video", tag, location, media.get(id).mediaPath());
 		        media.remove(id);
 
 			}

@@ -15,7 +15,7 @@ import java.text.SimpleDateFormat;
 
 public class TerminusDashboard extends JPanel 
 {
-	private class NodeInfo
+	public class NodeInfo
 	{
 		public String id;
 		public String location;
@@ -196,6 +196,10 @@ public class TerminusDashboard extends JPanel
 			
 			nodeInfo.put(info.id, info);
 		}
+	}
+	
+	public HashMap<String, NodeInfo> getNodeInfo() {
+		return this.nodeInfo;
 	}
 	
 	public static void tile( JDesktopPane desktopPane ) {

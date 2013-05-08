@@ -20,10 +20,10 @@
               <ul data-role="listview">
               <%
                 stat = conn.createStatement();
-                rs = stat.executeQuery("select distinct(id) from event");
+                rs = stat.executeQuery("select distinct(id), tag from event where type=\"Video\"");
  
                 while (rs.next()) {
-                    out.println("<li><a href=\"/?device=" + rs.getString("id") + "\" data-ajax=\"false\">" + rs.getString("id") + "</a></li>");                    
+                    out.println("<li><a href=\"/?device=" + rs.getString("id") + "\" data-ajax=\"false\">" + rs.getString("tag") + "</a></li>");                    
                 }
  
                 rs.close();
@@ -35,7 +35,7 @@
               <ul data-role="listview">
               <%
                 stat = conn.createStatement();
-                rs = stat.executeQuery("select distinct(location) from event");
+                rs = stat.executeQuery("select distinct(location) from event where type=\"Video\"");
  
                 while (rs.next()) {
                     out.println("<li><a href=\"/?location=" + rs.getString("location") + "\" data-ajax=\"false\">" + rs.getString("location") + "</a></li>");                    

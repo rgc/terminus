@@ -6,8 +6,13 @@
 
 <%
     Class.forName("org.sqlite.JDBC");
+    
+    SQLiteConfig dbConfig = new SQLiteConfig();
+
+	dbConfig.setReadOnly(true);
+    
     Connection conn =
-           DriverManager.getConnection("jdbc:sqlite:www/db/terminus.sqlite");
+           DriverManager.getConnection("jdbc:sqlite:www/db/terminus.sqlite", dbConfig.toProperties());
                      
 %>
 
@@ -32,3 +37,5 @@
     </div><!-- /header -->
     <div data-role="content">
         <div class="article">
+        	<a href="javascript:location.reload()" data-ajax="false" style="float:right;">REFRESH</a>
+        

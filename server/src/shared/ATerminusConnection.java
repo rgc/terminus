@@ -31,7 +31,9 @@ public abstract class ATerminusConnection
 	 */
 	public ATerminusConnection()
 	{
-		
+		uid = "";
+		location = "";
+		nickname = "";
 	}
 	
 	public String getID()

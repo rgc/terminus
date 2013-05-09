@@ -31,7 +31,10 @@ public class EventServer implements ITerminusMsgCallback, ITerminusServer
 {
 	public static final int EVENT_PORT = 34411;
 	public static final int INTERNET_TIMEOUT = 10000;
-		
+	public static final int WEB_PORT = 6901;
+	
+	private String eventUrl = "";
+	
 	/* Implementation specific communication */
 	private ITerminusServer eventCom;
 	
@@ -77,6 +80,7 @@ public class EventServer implements ITerminusMsgCallback, ITerminusServer
 		try
 		{
 			eventServerIP = EventServer.getLocalHost().getHostAddress();
+			eventUrl = "http://" + eventServerIP + ":" + String.valueOf(WEB_PORT);
 			imageServer.start();
 		}
 		catch (SocketTimeoutException e)
@@ -162,6 +166,7 @@ public class EventServer implements ITerminusMsgCallback, ITerminusServer
 				break;
 				
 			case TerminusMessage.MSG_EVENT:
+				processEvent(message, connection);
 				break;
 				
 			default:
@@ -186,42 +191,68 @@ public class EventServer implements ITerminusMsgCallback, ITerminusServer
 		
 		String id = message.getID();
 		
+		if (id == null || id.isEmpty())
+			return;
+			
+		connection.setID(id);
+		connection.setLocation(message.getLocation());
+		connection.setNickname(message.getNickname());
+		
 		if (sessions.contains(id))
 			sessions.remove(id);
 		
 		sessions.put(id, connection);
 		
-		connection.setID(id);
-		connection.setLocation(message.getLocation());
-		connection.setNickname(message.getNickname());
-		
+		//Consumer Registration
 		if (message.getRegistrationType() == RegisterMessage.REG_TYPE_CONSUMER)
+		{
+			if (consumerSessions.contains(id))
+				consumerSessions.remove(id);
+			
 			consumerSessions.put(id, connection);
+		}
 		
 		RegistrationResponse response = messageFactory.getRegistrationResponse(id);
 		response.setResult(RegistrationResponse.REGISTRATION_SUCCESS);
 		connection.sendMessage(response);
 	}
 	
-	public void alertConsumers(String nodeId, String url)
+	private void processEvent(TerminusMessage message, ATerminusConnection connection)
+	{
+		if (connection != null && message != null)
+		{
+			EventMessage em = (EventMessage) message;
+			if (em.getEventMsgType() == EventMessage.EVENT_START)
+			{
+				alertConsumers(connection, eventUrl);
+			}
+		}
+	}
+	
+	public void alertConsumers(ATerminusConnection originator, String url)
 	{
 		//For now, we'll send the connection id of the node that triggered the event.
 		//this might come in handy later if we need to add messages and do some kind
 		//of look up.
 		
+		AlertMessage message = messageFactory.getAlertMessage(originator.getID());
+		message.setLocation(originator.getLocation());
+		message.setNickname(originator.getNickname());
+		message.setURL(url);
+		
+		for (ATerminusConnection c : consumerSessions.values())
+		{
+			c.sendMessage(message);
+		}
+	}
+	
+	public void alertConsumers(String nodeId, String url)
+	{		
 		ATerminusConnection originator = this.sessions.get(nodeId);
 		
 		if (originator != null)
 		{
-			AlertMessage message = messageFactory.getAlertMessage(originator.getID());
-			message.setLocation(originator.getLocation());
-			message.setNickname(originator.getNickname());
-			message.setURL(url);
-			
-			for (ATerminusConnection c : consumerSessions.values())
-			{
-				c.sendMessage(message);
-			}
+			alertConsumers(originator, url);
 		}
 	}
 	

@@ -174,7 +174,7 @@ public abstract class CameraOpenCVAlgo extends CameraAlgo implements CvCameraVie
     	// the apply function will throw an error if you don't feed it an RGB image
     	// but it exports a gray image, so we need to convert the gray MAT
     	// into RGB before we apply it to the foreground mask
-    	Imgproc.cvtColor(mGray, mRgb, Imgproc.COLOR_GRAY2RGB);
+    	Imgproc.cvtColor(mGray, mRgb, Imgproc.COLOR_GRAY2BGR);
         // 5.2 fps here
         
         //apply() exports a gray image by definition
